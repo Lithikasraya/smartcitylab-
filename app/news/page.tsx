@@ -1,0 +1,1 @@
+export default function News() { return <div className="p-10"><h1 className="text-3xl">News</h1></div>; }

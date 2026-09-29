@@ -1,0 +1,1 @@
+export default function ApprovalCard() { return <div>Approval Card</div>; }

@@ -1,0 +1,1 @@
+export default function GalleryCard() { return <div>Gallery Card</div>; }

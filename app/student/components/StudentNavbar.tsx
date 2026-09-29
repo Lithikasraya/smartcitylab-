@@ -1,0 +1,1 @@
+export default function StudentNavbar() { return <nav>Student Nav</nav>; }

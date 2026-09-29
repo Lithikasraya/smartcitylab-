@@ -1,0 +1,1 @@
+export default function BatchCard() { return <div>Batch Card</div>; }

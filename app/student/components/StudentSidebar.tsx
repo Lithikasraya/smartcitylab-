@@ -1,0 +1,1 @@
+export default function StudentSidebar() { return <aside>Sidebar</aside>; }

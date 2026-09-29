@@ -1,0 +1,1 @@
+export default function Blogs() { return <div className="p-10"><h1 className="text-3xl">Blogs</h1></div>; }

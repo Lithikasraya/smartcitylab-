@@ -1,0 +1,2 @@
+import SubmissionForm from '../components/SubmissionForm';
+export default function SubmitProject() { return <div className="p-10"><h1 className="text-3xl">Submit Project</h1><SubmissionForm /></div>; }

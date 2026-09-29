@@ -1,0 +1,1 @@
+export default function Batches() { return <div className="p-10"><h1 className="text-3xl">Batches</h1></div>; }
