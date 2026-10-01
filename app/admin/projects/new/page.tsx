@@ -80,6 +80,7 @@ function ProjectEditorContent() {
   const [videoUrl, setVideoUrl] = useState('');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [videoProgress, setVideoProgress] = useState<number>(0);
   const [uploadSuccessMessage, setUploadSuccessMessage] = useState<string | null>(null);
 
   // Tech stack & Links
@@ -230,10 +231,16 @@ function ProjectEditorContent() {
     if (!file) return;
 
     setIsUploadingVideo(true);
+    setVideoProgress(0);
     setUploadSuccessMessage(null);
 
     try {
-      const uploadedUrl = await uploadMediaFile(file, 'projects/videos');
+      const uploadedUrl = await uploadMediaFile(
+        file, 
+        'projects/videos', 
+        undefined, 
+        (pct) => setVideoProgress(pct)
+      );
       setVideoUrl(uploadedUrl);
       setUploadSuccessMessage('Project video uploaded and linked successfully!');
       setTimeout(() => setUploadSuccessMessage(null), 3500);
@@ -242,6 +249,7 @@ function ProjectEditorContent() {
       setNotification({ type: 'error', message: `Upload failed: ${eMsg}` });
     } finally {
       setIsUploadingVideo(false);
+      setVideoProgress(0);
       if (videoFileInputRef.current) videoFileInputRef.current.value = '';
     }
   };
@@ -632,9 +640,11 @@ function ProjectEditorContent() {
                   icon={isUploadingVideo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                   onClick={() => videoFileInputRef.current?.click()}
                   disabled={isUploadingVideo}
-                  className="shrink-0"
+                  className="shrink-0 font-medium"
                 >
-                  {isUploadingVideo ? 'Uploading Video...' : 'Upload Video File'}
+                  {isUploadingVideo 
+                    ? (videoProgress > 0 ? `Uploading Video (${videoProgress}%)...` : 'Uploading Video...') 
+                    : 'Upload Video File'}
                 </Button>
               </div>
 

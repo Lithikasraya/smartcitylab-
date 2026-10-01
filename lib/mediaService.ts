@@ -1,45 +1,92 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from './firebase';
 
 /**
  * Universal media upload helper:
- * 1. Attempts direct upload to Firebase Storage
- * 2. Falls back to API upload route (/api/upload for Cloudflare R2 / server)
+ * 1. For videos & large files (> 3.5MB): Direct client-to-cloud upload to bypass Vercel serverless limits
+ * 2. For images: Cloudflare R2 / Server upload with fast fallback
  * 3. Client-side compressed data URI fallback to guarantee zero broken uploads
  */
 export async function uploadMediaFile(
   file: File | Blob,
   folder = 'uploads',
-  customFileName?: string
+  customFileName?: string,
+  onProgress?: (percent: number) => void
 ): Promise<string> {
   const originalName = file instanceof File ? file.name : 'media_file';
   const cleanName = (customFileName || originalName).replace(/[^a-zA-Z0-9._-]/g, '_');
   const timestamp = Date.now();
   const storagePath = `${folder}/${timestamp}_${cleanName}`;
+  const isVideo = file.type.startsWith('video/') || (file instanceof File && /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name));
+  const isLargeFile = file.size > 3.5 * 1024 * 1024;
 
-  // 1. Try Cloudflare R2 / Server upload endpoint FIRST
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('fileName', cleanName);
-    formData.append('folder', folder);
+  // 1. Direct Client-to-Cloud Upload for Videos & Large Files (bypasses Vercel serverless limits)
+  if (isVideo || isLargeFile) {
+    if (storage) {
+      try {
+        const storageRef = ref(storage, storagePath);
+        if (onProgress) {
+          return await new Promise((resolve, reject) => {
+            const uploadTask = uploadBytesResumable(storageRef, file, {
+              contentType: file.type || (isVideo ? 'video/mp4' : 'application/octet-stream'),
+            });
 
-    const res = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data.url && data.provider === 'cloudflare_r2') {
-        return data.url;
+            uploadTask.on(
+              'state_changed',
+              (snap) => {
+                const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+                onProgress(pct);
+              },
+              (err) => reject(err),
+              async () => {
+                const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(downloadUrl);
+              }
+            );
+          });
+        } else {
+          const snapshot = await uploadBytes(storageRef, file, {
+            contentType: file.type || (isVideo ? 'video/mp4' : 'application/octet-stream'),
+          });
+          const downloadUrl = await getDownloadURL(snapshot.ref);
+          if (downloadUrl) return downloadUrl;
+        }
+      } catch (directCloudErr) {
+        console.warn('Direct video cloud upload note, trying fallback:', directCloudErr);
       }
     }
-  } catch (serverErr) {
-    console.warn('Cloudflare R2 upload note, trying secondary storage:', serverErr);
   }
 
-  // 2. Try Firebase Storage directly
+  // 2. Try Cloudflare R2 / Server upload endpoint for standard files (< 3.5MB)
+  if (!isLargeFile) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileName', cleanName);
+      formData.append('folder', folder);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url && data.provider === 'cloudflare_r2') {
+          return data.url;
+        }
+      }
+    } catch (serverErr) {
+      console.warn('Cloudflare R2 upload note, trying secondary storage:', serverErr);
+    }
+  }
+
+  // 3. Try Firebase Storage directly as secondary fallback
   try {
     if (storage) {
       const storageRef = ref(storage, storagePath);
