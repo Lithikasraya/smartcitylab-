@@ -8,13 +8,15 @@ import Navbar from '@/components/shared/Navbar';
 import Footer from '@/components/shared/Footer';
 import Modal from '@/components/shared/Modal';
 import MemberAvatar from '@/components/shared/MemberAvatar';
+import ProjectThumbnail from '@/components/shared/ProjectThumbnail';
 import { usePortalStore } from '@/lib/store';
 import { ProjectItem } from '@/lib/data';
+import { getMediaDisplayUrl } from '@/lib/mediaService';
 import {
   ArrowRight, ArrowUpRight, Zap, Shield, Globe, Cpu,
   Users, BookOpen, CheckCircle, Radio, Layers, Code2, Wifi,
   Leaf, TrendingUp, Award, Activity, ExternalLink, Star,
-  BarChart3, Clock, ChevronRight
+  BarChart3, Clock, ChevronRight, Video
 } from 'lucide-react';
 
 const LOTTIE_URL = 'https://lottie.host/d12ed86a-13b1-4922-a564-c918a129e464/jVwu7ncw6O.json';
@@ -168,6 +170,104 @@ function AnimatedHeadline() {
         ))}
       </h1>
     </div>
+  );
+}
+
+function HomeProjectCard({ project, onSelect }: { project: ProjectItem; onSelect: () => void }) {
+  const [imgError, setImgError] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const cfg = CAT_CFG[project.category] ?? { gradient: 'from-blue-600 to-indigo-600', icon: Layers, accent: '#3b82f6' };
+  const Icon = cfg.icon;
+  const members = project.members || [project.teamLead];
+
+  const displayVideoUrl = getMediaDisplayUrl(project.videoUrl);
+  const displayImageUrl = getMediaDisplayUrl(project.imageUrl);
+
+  const hasVideo = Boolean(displayVideoUrl && !videoError);
+  const hasImage = Boolean(displayImageUrl && !imgError);
+
+  return (
+    <motion.div
+      variants={fadeUp}
+      onClick={onSelect}
+      className="group bg-white rounded-2xl border border-gray-100 overflow-hidden card-shadow hover:card-shadow-hover hover:-translate-y-1.5 transition-all duration-200 cursor-pointer flex flex-col h-full text-left"
+    >
+      <div className="relative h-48 w-full bg-slate-950 overflow-hidden shrink-0">
+        {hasVideo ? (
+          <div className="relative w-full h-full">
+            <video
+              src={displayVideoUrl}
+              autoPlay
+              loop
+              muted
+              playsInline
+              onError={() => setVideoError(true)}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/30 pointer-events-none" />
+            <div className="absolute bottom-3 right-3 z-10">
+              <span className="flex items-center gap-1.5 text-[9px] font-bold text-white bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/15">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> LIVE DEMO
+              </span>
+            </div>
+          </div>
+        ) : hasImage ? (
+          <div className="relative w-full h-full">
+            <img
+              src={displayImageUrl}
+              alt={project.title}
+              onError={() => setImgError(true)}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none" />
+          </div>
+        ) : (
+          <div className={`relative w-full h-full bg-gradient-to-br ${cfg.gradient} flex items-center justify-center overflow-hidden`}>
+            <div className="absolute inset-0 grid-bg opacity-10" />
+            <div className="w-14 h-14 bg-white/15 backdrop-blur-sm rounded-2xl border border-white/25 flex items-center justify-center shadow-lg">
+              <Icon className="w-7 h-7 text-white" />
+            </div>
+          </div>
+        )}
+
+        <span className="absolute bottom-3 left-3 z-10 text-[10px] font-bold text-white/95 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15 uppercase tracking-wide">
+          Batch {project.batchYear}
+        </span>
+        <span className="absolute top-3 right-3 z-10 flex items-center gap-1 text-[9px] font-bold text-white bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/15">
+          <CheckCircle className="w-2.5 h-2.5 text-emerald-400" /> Verified
+        </span>
+      </div>
+
+      <div className="p-5 flex-1 flex flex-col justify-between">
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: cfg.accent }}>{project.category}</span>
+          <h3 className="text-[16px] font-bold text-gray-900 mt-1.5 mb-2 leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">{project.title}</h3>
+          <p className="text-[13px] text-gray-500 line-clamp-2 leading-relaxed mb-4">{project.tagline || project.description}</p>
+          <div className="flex flex-wrap gap-1.5 mb-5">
+            {project.techStack.slice(0, 3).map((t) => (
+              <span key={t} className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-medium">{t}</span>
+            ))}
+            {project.techStack.length > 3 && (
+              <span className="px-2 py-0.5 rounded-full text-[11px] text-gray-400 border border-dashed border-gray-200">+{project.techStack.length - 3}</span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-1.5">
+              {members.slice(0, 3).map((n, i) => (
+                <MemberAvatar key={i} name={n} size="sm" isLead={n === project.teamLead} role={n === project.teamLead ? 'Team Lead' : 'Member'} />
+              ))}
+            </div>
+            <span className="text-[11px] font-medium text-gray-500 truncate max-w-[90px]">{project.teamName}</span>
+          </div>
+          <span className="text-blue-600 text-[12px] font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            View <ArrowRight className="w-3 h-3" />
+          </span>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -400,56 +500,13 @@ export default function Home() {
               animate={projInView ? 'visible' : 'hidden'}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
             >
-              {featuredProjects.map((project) => {
-                const cfg = CAT_CFG[project.category] ?? { gradient: 'from-blue-600 to-indigo-600', icon: Layers, accent: '#3b82f6' };
-                const Icon = cfg.icon;
-                const members = project.members || [project.teamLead];
-                return (
-                  <motion.div
-                    key={project.id}
-                    variants={fadeUp}
-                    onClick={() => setActiveModal(project)}
-                    className="group bg-white rounded-2xl border border-gray-100 overflow-hidden card-shadow hover:card-shadow-hover hover:-translate-y-1.5 transition-all duration-200 cursor-pointer"
-                  >
-                    <div className={`relative h-44 bg-gradient-to-br ${cfg.gradient} flex items-center justify-center overflow-hidden`}>
-                      <div className="absolute inset-0 grid-bg opacity-10" />
-                      <div className="w-14 h-14 bg-white/15 backdrop-blur-sm rounded-2xl border border-white/25 flex items-center justify-center shadow-lg">
-                        <Icon className="w-7 h-7 text-white" />
-                      </div>
-                      <span className="absolute bottom-3 left-3 text-[10px] font-bold text-white/70 uppercase tracking-wide">Batch {project.batchYear}</span>
-                      <span className="absolute top-3 right-3 flex items-center gap-1 text-[9px] font-bold text-white bg-black/20 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/15">
-                        <CheckCircle className="w-2.5 h-2.5" /> Verified
-                      </span>
-                    </div>
-                    <div className="p-5">
-                      <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: cfg.accent }}>{project.category}</span>
-                      <h3 className="text-[16px] font-bold text-gray-900 mt-1.5 mb-2 leading-snug group-hover:text-blue-600 transition-colors">{project.title}</h3>
-                      <p className="text-[13px] text-gray-500 line-clamp-2 leading-relaxed mb-4">{project.tagline || project.description}</p>
-                      <div className="flex flex-wrap gap-1.5 mb-5">
-                        {project.techStack.slice(0, 3).map((t) => (
-                          <span key={t} className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-medium">{t}</span>
-                        ))}
-                        {project.techStack.length > 3 && (
-                          <span className="px-2 py-0.5 rounded-full text-[11px] text-gray-400 border border-dashed border-gray-200">+{project.techStack.length - 3}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                        <div className="flex items-center gap-2">
-                          <div className="flex -space-x-1.5">
-                            {members.slice(0, 3).map((n, i) => (
-                              <MemberAvatar key={i} name={n} size="sm" isLead={n === project.teamLead} role={n === project.teamLead ? 'Team Lead' : 'Member'} />
-                            ))}
-                          </div>
-                          <span className="text-[11px] font-medium text-gray-500 truncate max-w-[90px]">{project.teamName}</span>
-                        </div>
-                        <span className="text-blue-600 text-[12px] font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          View <ArrowRight className="w-3 h-3" />
-                        </span>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+              {featuredProjects.map((project) => (
+                <HomeProjectCard
+                  key={project.id}
+                  project={project}
+                  onSelect={() => setActiveModal(project)}
+                />
+              ))}
             </motion.div>
           )}
         </div>
@@ -619,6 +676,13 @@ export default function Home() {
       {activeModal && (
         <Modal isOpen={!!activeModal} onClose={() => setActiveModal(null)} title={activeModal.title}>
           <div className="space-y-5">
+            <ProjectThumbnail
+              imageUrl={activeModal.imageUrl}
+              videoUrl={activeModal.videoUrl}
+              title={activeModal.title}
+              category={activeModal.category}
+              className="h-56 w-full rounded-xl overflow-hidden"
+            />
             <div className="flex flex-wrap gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[12px] font-semibold border border-blue-100">{activeModal.category}</span>
               <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[12px] font-medium">Batch {activeModal.batchYear}</span>

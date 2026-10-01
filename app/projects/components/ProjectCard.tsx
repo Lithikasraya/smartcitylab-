@@ -7,6 +7,8 @@ import { ProjectItem } from '@/lib/data';
 import { Github } from '@/components/shared/Icons';
 import { ExternalLink, ArrowRight, ShieldCheck, Video } from 'lucide-react';
 
+import { getMediaDisplayUrl } from '@/lib/mediaService';
+
 interface ProjectCardProps {
   project: ProjectItem;
   onSelect: (project: ProjectItem) => void;
@@ -46,8 +48,11 @@ export default function ProjectCard({ project, onSelect }: ProjectCardProps) {
   const accent = CATEGORY_ACCENT[project.category] ?? '#2563EB';
   const symbol = CATEGORY_SYMBOL[project.category] ?? '◈';
 
-  const hasVideo = Boolean(project.videoUrl && !videoError);
-  const hasImage = Boolean(project.imageUrl && !imgError);
+  const displayVideoUrl = getMediaDisplayUrl(project.videoUrl);
+  const displayImageUrl = getMediaDisplayUrl(project.imageUrl);
+
+  const hasVideo = Boolean(displayVideoUrl && !videoError);
+  const hasImage = Boolean(displayImageUrl && !imgError);
 
   return (
     <motion.div
@@ -61,7 +66,7 @@ export default function ProjectCard({ project, onSelect }: ProjectCardProps) {
         {hasVideo ? (
           <div className="relative w-full h-full">
             <video
-              src={project.videoUrl}
+              src={displayVideoUrl}
               autoPlay
               loop
               muted
@@ -84,7 +89,7 @@ export default function ProjectCard({ project, onSelect }: ProjectCardProps) {
         ) : hasImage ? (
           <div className="relative w-full h-full">
             <img
-              src={project.imageUrl}
+              src={displayImageUrl}
               alt={project.title}
               onError={() => setImgError(true)}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

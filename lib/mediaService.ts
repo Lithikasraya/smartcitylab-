@@ -3,9 +3,9 @@ import { storage } from './firebase';
 
 /**
  * Universal media upload helper:
- * 1. For videos & large files (> 3.5MB): Direct client-to-cloud upload to bypass Vercel serverless limits
- * 2. For images: Cloudflare R2 / Server upload with fast fallback
- * 3. Client-side compressed data URI fallback to guarantee zero broken uploads
+ * 1. Direct client-to-cloud upload to Firebase Storage (public CDN, instant rendering across all environments)
+ * 2. Progress reporting for large media / videos
+ * 3. Fast server upload fallback & client-side compression fallback
  */
 export async function uploadMediaFile(
   file: File | Blob,
@@ -18,96 +18,73 @@ export async function uploadMediaFile(
   const timestamp = Date.now();
   const storagePath = `${folder}/${timestamp}_${cleanName}`;
   const isVideo = file.type.startsWith('video/') || (file instanceof File && /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name));
-  const isLargeFile = file.size > 3.5 * 1024 * 1024;
 
-  // 1. Direct Client-to-Cloud Upload for Videos & Large Files (bypasses Vercel serverless limits)
-  if (isVideo || isLargeFile) {
-    if (storage) {
-      try {
-        const storageRef = ref(storage, storagePath);
-        if (onProgress) {
-          return await new Promise((resolve, reject) => {
-            const uploadTask = uploadBytesResumable(storageRef, file, {
-              contentType: file.type || (isVideo ? 'video/mp4' : 'application/octet-stream'),
-            });
-
-            uploadTask.on(
-              'state_changed',
-              (snap) => {
-                const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-                onProgress(pct);
-              },
-              (err) => reject(err),
-              async () => {
-                const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                resolve(downloadUrl);
-              }
-            );
-          });
-        } else {
-          const snapshot = await uploadBytes(storageRef, file, {
-            contentType: file.type || (isVideo ? 'video/mp4' : 'application/octet-stream'),
-          });
-          const downloadUrl = await getDownloadURL(snapshot.ref);
-          if (downloadUrl) return downloadUrl;
-        }
-      } catch (directCloudErr) {
-        console.warn('Direct video cloud upload note, trying fallback:', directCloudErr);
-      }
-    }
-  }
-
-  // 2. Try Cloudflare R2 / Server upload endpoint for standard files (< 3.5MB)
-  if (!isLargeFile) {
+  // 1. Primary: Direct Client Firebase Storage upload (works everywhere, zero serverless proxy required)
+  if (storage) {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('fileName', cleanName);
-      formData.append('folder', folder);
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.url && data.provider === 'cloudflare_r2') {
-          return data.url;
-        }
-      }
-    } catch (serverErr) {
-      console.warn('Cloudflare R2 upload note, trying secondary storage:', serverErr);
-    }
-  }
-
-  // 3. Try Firebase Storage directly as secondary fallback
-  try {
-    if (storage) {
       const storageRef = ref(storage, storagePath);
-      const snapshot = await uploadBytes(storageRef, file, {
-        contentType: file.type || 'application/octet-stream',
-      });
-      const downloadUrl = await getDownloadURL(snapshot.ref);
-      if (downloadUrl) {
-        return downloadUrl;
+      const mimeType = file.type || (isVideo ? 'video/mp4' : 'image/jpeg');
+
+      if (onProgress) {
+        return await new Promise((resolve, reject) => {
+          const uploadTask = uploadBytesResumable(storageRef, file, { contentType: mimeType });
+
+          uploadTask.on(
+            'state_changed',
+            (snap) => {
+              const pct = snap.totalBytes > 0 ? Math.round((snap.bytesTransferred / snap.totalBytes) * 100) : 0;
+              onProgress(pct);
+            },
+            (err) => reject(err),
+            async () => {
+              const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(downloadUrl);
+            }
+          );
+        });
+      } else {
+        const snapshot = await uploadBytes(storageRef, file, { contentType: mimeType });
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+        if (downloadUrl) return downloadUrl;
       }
+    } catch (directStorageErr) {
+      console.warn('Firebase Storage upload note, trying fallback:', directStorageErr);
     }
-  } catch (firebaseErr) {
-    console.warn('Firebase Storage upload note, trying compressed client fallback:', firebaseErr);
   }
 
-  // 3. Fallback: Compress image to lightweight Base64/WebP
+  // 2. Secondary fallback: Server-side Cloudflare R2 / upload endpoint
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('fileName', cleanName);
+    formData.append('folder', folder);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.url) {
+        return data.url;
+      }
+    }
+  } catch (serverErr) {
+    console.warn('Server upload fallback note:', serverErr);
+  }
+
+  // 3. Fallback for images: Compress image to lightweight base64 Data URI
   if (file.type.startsWith('image/')) {
     try {
       return await compressImageToBase64(file);
     } catch {
-      // ignore
+      // continue to reader
     }
   }
 
@@ -159,19 +136,21 @@ export async function compressImageToBase64(file: File | Blob, maxWidth = 1280, 
 }
 
 /**
- * Ensures any stored Cloudflare R2 S3-endpoint URL is seamlessly mapped to the viewable proxy URL
+ * Ensures any stored Cloudflare R2 S3-endpoint URL or media path is seamlessly mapped to a displayable URL
  */
 export function getMediaDisplayUrl(url?: string): string {
   if (!url) return '';
-  if (url.includes('.r2.cloudflarestorage.com/')) {
-    const parts = url.split('.r2.cloudflarestorage.com/');
-    if (parts[1]) {
-      // Remove bucket prefix if included
-      const pathWithBucket = parts[1];
-      const slashIndex = pathWithBucket.indexOf('/');
-      const cleanPath = slashIndex !== -1 ? pathWithBucket.substring(slashIndex + 1) : pathWithBucket;
-      return `/api/media/${cleanPath}`;
+  if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http')) {
+    if (url.includes('.r2.cloudflarestorage.com/')) {
+      const parts = url.split('.r2.cloudflarestorage.com/');
+      if (parts[1]) {
+        const pathWithBucket = parts[1];
+        const slashIndex = pathWithBucket.indexOf('/');
+        const cleanPath = slashIndex !== -1 ? pathWithBucket.substring(slashIndex + 1) : pathWithBucket;
+        return `/api/media/${cleanPath}`;
+      }
     }
+    return url;
   }
   return url;
 }
