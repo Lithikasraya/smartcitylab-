@@ -2,8 +2,6 @@
 
 import React, { useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import Navbar from '@/components/shared/Navbar';
-import Footer from '@/components/shared/Footer';
 import Card from '@/components/shared/Card';
 import Button from '@/components/shared/Button';
 import { Input, Textarea } from '@/components/shared/Input';
@@ -336,82 +334,124 @@ export default function PublicProposalPage() {
   const displayImageUrl = getMediaDisplayUrl(imageUrl);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#0A0A0A] flex flex-col font-sans">
-      <Navbar />
-
-      <main className="flex-grow pt-24 sm:pt-28 pb-24">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-
-          {/* ══════════════════════════════════════════════════════════════════
-              HEADER BANNER
-          ══════════════════════════════════════════════════════════════════ */}
-          <div className="text-center mb-8 space-y-2">
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-3.5 py-1 rounded-full shadow-xs">
-              <Sparkles className="w-3.5 h-3.5" /> Official Research Submission Portal
-            </span>
-            <h1 className="text-[30px] sm:text-[40px] font-black tracking-tight text-[#0A0A0A] leading-tight">
-              Project Proposal Submission
-            </h1>
-            <p className="text-[15px] text-[#6B7280] max-w-xl mx-auto">
-              Submit your lab innovation, edge AI model, or smart city prototype for Super Admin verification and publication.
-            </p>
+    <div className="min-h-screen bg-[#0B0F19] text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+      {/* ══════════════════════════════════════════════════════════════════
+          MINIMAL DEDICATED PORTAL TOP BAR (NO WEBSITE NAVBAR)
+      ══════════════════════════════════════════════════════════════════ */}
+      <header className="border-b border-white/10 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white text-sm shadow-md shadow-blue-500/30">
+              SC
+            </div>
+            <div>
+              <div className="font-extrabold text-white text-[15px] tracking-tight leading-none">
+                Smart City Lab
+              </div>
+              <div className="text-[11px] text-blue-400 font-semibold tracking-wide uppercase mt-0.5">
+                Public Project Proposal Portal
+              </div>
+            </div>
           </div>
 
+          {authenticatedStudent && (
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex flex-col text-right">
+                <span className="text-[13px] font-bold text-white">{authenticatedStudent.name}</span>
+                <span className="text-[11px] text-slate-400">{authenticatedStudent.rollNo || authenticatedStudent.email}</span>
+              </div>
+              <button
+                onClick={() => {
+                  setAuthenticatedStudent(null);
+                  setLoginIdentifier('');
+                  setLoginPassword('');
+                }}
+                className="px-2.5 py-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                title="Change Student / Log Out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Switch</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      <main className="flex-grow py-8 sm:py-12 px-4 sm:px-6 flex items-center justify-center">
+        <div className="w-full max-w-3xl mx-auto">
+
           {/* ══════════════════════════════════════════════════════════════════
-              STEP 1: STUDENT AUTHENTICATION GATE (If not verified yet)
+              STEP 1: STUDENT AUTHENTICATION GATE (Clean Dedicated Card)
           ══════════════════════════════════════════════════════════════════ */}
           {!authenticatedStudent ? (
-            <Card className="max-w-md mx-auto p-6 sm:p-8 space-y-6 border-[#E5E7EB] shadow-lg">
+            <div className="bg-slate-900/90 border border-white/10 rounded-2xl p-6 sm:p-10 shadow-2xl backdrop-blur-xl space-y-6">
               <div className="text-center space-y-2">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-xs">
-                  <Lock className="w-6 h-6" />
+                <div className="w-14 h-14 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center mx-auto shadow-inner mb-3">
+                  <Lock className="w-7 h-7" />
                 </div>
-                <h2 className="text-[20px] font-bold text-[#0A0A0A]">Student Verification</h2>
-                <p className="text-[13px] text-[#6B7280]">
-                  Please enter your student credentials to verify your lab registration before submitting a proposal.
+                <h1 className="text-[24px] sm:text-[28px] font-black text-white tracking-tight">
+                  Student Verification
+                </h1>
+                <p className="text-[14px] text-slate-400 max-w-md mx-auto leading-relaxed">
+                  Enter your registered Student University Roll Number or College Email to unlock the project proposal submission form.
                 </p>
               </div>
 
               {authError && (
-                <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px] flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-[13px] flex items-start gap-2.5 animate-fadeIn">
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-400" />
                   <span>{authError}</span>
                 </div>
               )}
 
               <form onSubmit={handleStudentLogin} className="space-y-4 text-left">
-                <Input
-                  label="University Roll Number or Email *"
-                  placeholder="e.g. 2300290100099 or name@kiet.edu"
-                  value={loginIdentifier}
-                  onChange={(e) => setLoginIdentifier(e.target.value)}
-                  icon={<User className="w-4 h-4 text-gray-400" />}
-                  required
-                />
+                <div className="space-y-1.5">
+                  <label className="block text-[13px] font-bold text-slate-200 uppercase tracking-wider">
+                    University Roll Number or Email *
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="e.g. 2300290100099 or your.name@kiet.edu"
+                      value={loginIdentifier}
+                      onChange={(e) => setLoginIdentifier(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-800/80 border border-white/15 rounded-xl text-[14px] text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all font-medium"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
 
-                <Input
-                  label="Portal Password / Passkey"
-                  type="password"
-                  placeholder="Enter your password or SCL PIN..."
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  icon={<KeyRound className="w-4 h-4 text-gray-400" />}
-                />
+                <div className="space-y-1.5">
+                  <label className="block text-[13px] font-bold text-slate-200 uppercase tracking-wider">
+                    Portal Password / Passkey <span className="text-slate-400 font-normal lowercase">(Optional if default)</span>
+                  </label>
+                  <div className="relative">
+                    <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="password"
+                      placeholder="Enter password or temporary passkey..."
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-800/80 border border-white/15 rounded-xl text-[14px] text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all font-medium"
+                    />
+                  </div>
+                </div>
 
-                <Button
+                <button
                   type="submit"
-                  variant="primary"
-                  size="md"
-                  className="w-full justify-center shadow-md shadow-blue-600/30"
+                  className="w-full py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-[15px] shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer"
                 >
-                  Verify & Open Proposal Form
-                </Button>
+                  <span>Verify Student & Open Form</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </form>
 
-              <div className="pt-2 text-center text-[12px] text-[#6B7280] border-t border-gray-100">
-                Not registered yet? Contact lab coordinator or check with Super Admin.
+              <div className="pt-4 border-t border-white/10 text-center text-[12px] text-slate-400">
+                Only registered students of Smart City Lab can propose projects. Contact your lab administrator if you are not registered.
               </div>
-            </Card>
+            </div>
           ) : submittedProposal ? (
             /* ══════════════════════════════════════════════════════════════════
                 SUCCESS CONFIRMATION SCREEN
@@ -980,8 +1020,6 @@ export default function PublicProposalPage() {
 
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }
