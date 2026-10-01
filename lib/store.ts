@@ -116,28 +116,37 @@ export function usePortalStore() {
         }
       });
 
-      const inn = localStorage.getItem(STORAGE_KEYS.INNOVATORS);
-      if (inn) setInnovators(JSON.parse(inn));
-      const p = localStorage.getItem(STORAGE_KEYS.PROJECTS);
-      if (p) setProjects(JSON.parse(p));
-      const n = localStorage.getItem(STORAGE_KEYS.NEWS);
-      if (n) setNews(JSON.parse(n));
-      const b = localStorage.getItem(STORAGE_KEYS.BLOGS);
-      if (b) setBlogs(JSON.parse(b));
-      const bt = localStorage.getItem(STORAGE_KEYS.BATCHES);
-      if (bt) setBatches(JSON.parse(bt));
-      const bi = localStorage.getItem(STORAGE_KEYS.BATCH_INFOS);
-      if (bi) setBatchInfos(JSON.parse(bi));
-      const q = localStorage.getItem(STORAGE_KEYS.QUESTS);
-      if (q) setQuests(JSON.parse(q));
-      const t = localStorage.getItem(STORAGE_KEYS.TEAMS);
-      if (t) setTeams(JSON.parse(t));
-      const tk = localStorage.getItem(STORAGE_KEYS.TASKS);
-      if (tk) setTasks(JSON.parse(tk));
-      const sub = localStorage.getItem(STORAGE_KEYS.SUBMISSIONS);
-      if (sub) setSubmissions(JSON.parse(sub));
-      const u = localStorage.getItem(STORAGE_KEYS.USER);
-      if (u) setUser(JSON.parse(u));
+      const safeParse = (str: string | null) => {
+        if (!str || str === 'undefined' || str === 'null') return null;
+        try {
+          return JSON.parse(str);
+        } catch {
+          return null;
+        }
+      };
+
+      const inn = safeParse(localStorage.getItem(STORAGE_KEYS.INNOVATORS));
+      if (inn) setInnovators(inn);
+      const p = safeParse(localStorage.getItem(STORAGE_KEYS.PROJECTS));
+      if (p) setProjects(p);
+      const n = safeParse(localStorage.getItem(STORAGE_KEYS.NEWS));
+      if (n) setNews(n);
+      const b = safeParse(localStorage.getItem(STORAGE_KEYS.BLOGS));
+      if (b) setBlogs(b);
+      const bt = safeParse(localStorage.getItem(STORAGE_KEYS.BATCHES));
+      if (bt) setBatches(bt);
+      const bi = safeParse(localStorage.getItem(STORAGE_KEYS.BATCH_INFOS));
+      if (bi) setBatchInfos(bi);
+      const q = safeParse(localStorage.getItem(STORAGE_KEYS.QUESTS));
+      if (q) setQuests(q);
+      const t = safeParse(localStorage.getItem(STORAGE_KEYS.TEAMS));
+      if (t) setTeams(t);
+      const tk = safeParse(localStorage.getItem(STORAGE_KEYS.TASKS));
+      if (tk) setTasks(tk);
+      const sub = safeParse(localStorage.getItem(STORAGE_KEYS.SUBMISSIONS));
+      if (sub) setSubmissions(sub);
+      const u = safeParse(localStorage.getItem(STORAGE_KEYS.USER));
+      if (u) setUser(u);
 
       // Fetch live real data from Firestore and subscribe in real-time with resilient map merging
       if (isFirebaseConfigured) {
