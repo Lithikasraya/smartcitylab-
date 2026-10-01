@@ -65,7 +65,7 @@ function FacultyEditorContent() {
     try {
       const url = await uploadMediaFile(file, 'faculty/photos');
       setPhotoUrl(url);
-      setNotification({ type: 'success', message: 'Faculty photo uploaded to Firebase Storage!' });
+      setNotification({ type: 'success', message: 'Faculty photo uploaded successfully!' });
       setTimeout(() => setNotification(null), 3000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Photo upload failed';
@@ -225,7 +225,7 @@ function FacultyEditorContent() {
                 )}
               </div>
               <p className="text-[12px] text-slate-500">
-                Upload portrait photo (PNG, JPG, WebP) directly to Firebase Storage.
+                Upload portrait photo (PNG, JPG, WebP).
               </p>
               <div className="pt-1.5 flex items-center justify-center sm:justify-start gap-2.5">
                 <input

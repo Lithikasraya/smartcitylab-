@@ -17,23 +17,7 @@ export async function uploadMediaFile(
   const timestamp = Date.now();
   const storagePath = `${folder}/${timestamp}_${cleanName}`;
 
-  // 1. Try Firebase Storage directly
-  try {
-    if (storage) {
-      const storageRef = ref(storage, storagePath);
-      const snapshot = await uploadBytes(storageRef, file, {
-        contentType: file.type || 'application/octet-stream',
-      });
-      const downloadUrl = await getDownloadURL(snapshot.ref);
-      if (downloadUrl) {
-        return downloadUrl;
-      }
-    }
-  } catch (firebaseErr) {
-    console.warn('Firebase Storage upload note, trying fallback endpoint:', firebaseErr);
-  }
-
-  // 2. Try Server / Cloudflare R2 upload endpoint
+  // 1. Try Cloudflare R2 / Server upload endpoint FIRST
   try {
     const formData = new FormData();
     formData.append('file', file);
@@ -47,12 +31,28 @@ export async function uploadMediaFile(
 
     if (res.ok) {
       const data = await res.json();
-      if (data.url) {
+      if (data.url && data.provider === 'cloudflare_r2') {
         return data.url;
       }
     }
   } catch (serverErr) {
-    console.warn('Server upload endpoint note, trying compressed client fallback:', serverErr);
+    console.warn('Cloudflare R2 upload note, trying secondary storage:', serverErr);
+  }
+
+  // 2. Try Firebase Storage directly
+  try {
+    if (storage) {
+      const storageRef = ref(storage, storagePath);
+      const snapshot = await uploadBytes(storageRef, file, {
+        contentType: file.type || 'application/octet-stream',
+      });
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+      if (downloadUrl) {
+        return downloadUrl;
+      }
+    }
+  } catch (firebaseErr) {
+    console.warn('Firebase Storage upload note, trying compressed client fallback:', firebaseErr);
   }
 
   // 3. Fallback: Compress image to lightweight Base64/WebP

@@ -571,7 +571,7 @@ function ProjectEditorContent() {
                     </div>
                     <div>
                       <p className="text-[14px] font-bold text-[#0A0A0A]">
-                        {isUploadingImage ? 'Uploading Image to Firebase Storage...' : 'Click to Upload Cover Image'}
+                        {isUploadingImage ? 'Uploading Cover Image...' : 'Click to Upload Cover Image'}
                       </p>
                       <p className="text-[12px] text-[#6B7280] mt-0.5">
                         High-resolution 16:9 images look best in the showcase cards
