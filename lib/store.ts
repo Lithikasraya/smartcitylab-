@@ -124,33 +124,79 @@ export function usePortalStore() {
       const u = localStorage.getItem(STORAGE_KEYS.USER);
       if (u) setUser(JSON.parse(u));
 
-      // Fetch live real data from Firestore and subscribe in real-time
+      // Fetch live real data from Firestore and subscribe in real-time with resilient map merging
       if (isFirebaseConfigured) {
         const unsubStudents = subscribeToStudents((firestoreStudents) => {
-          if (firestoreStudents && firestoreStudents.length > 0) {
-            setBatches(firestoreStudents);
-            saveItem(STORAGE_KEYS.BATCHES, firestoreStudents);
+          if (firestoreStudents) {
+            setBatches((prev) => {
+              const map = new Map<string, BatchMember>();
+              // First add firestore incoming items
+              firestoreStudents.forEach((s) => map.set(s.id, s));
+              // Merge local items that are not in firestore yet
+              prev.forEach((s) => {
+                if (!map.has(s.id)) {
+                  map.set(s.id, s);
+                  saveStudentToFirestore(s).catch(() => {});
+                }
+              });
+              const merged = Array.from(map.values());
+              saveItem(STORAGE_KEYS.BATCHES, merged);
+              return merged;
+            });
           }
         });
 
         const unsubProjects = subscribeToProjects((firestoreProjects) => {
-          if (firestoreProjects && firestoreProjects.length > 0) {
-            setProjects(firestoreProjects);
-            saveItem(STORAGE_KEYS.PROJECTS, firestoreProjects);
+          if (firestoreProjects) {
+            setProjects((prev) => {
+              const map = new Map<string, ProjectItem>();
+              firestoreProjects.forEach((p) => map.set(p.id, p));
+              prev.forEach((p) => {
+                if (!map.has(p.id)) {
+                  map.set(p.id, p);
+                  saveProjectToFirestore(p).catch(() => {});
+                }
+              });
+              const merged = Array.from(map.values());
+              saveItem(STORAGE_KEYS.PROJECTS, merged);
+              return merged;
+            });
           }
         });
 
         const unsubBatches = subscribeToBatches((firestoreBatches) => {
-          if (firestoreBatches && firestoreBatches.length > 0) {
-            setBatchInfos(firestoreBatches);
-            saveItem(STORAGE_KEYS.BATCH_INFOS, firestoreBatches);
+          if (firestoreBatches) {
+            setBatchInfos((prev) => {
+              const map = new Map<string, BatchInfo>();
+              firestoreBatches.forEach((b) => map.set(b.id, b));
+              prev.forEach((b) => {
+                if (!map.has(b.id)) {
+                  map.set(b.id, b);
+                  saveBatchToFirestore(b).catch(() => {});
+                }
+              });
+              const merged = Array.from(map.values());
+              saveItem(STORAGE_KEYS.BATCH_INFOS, merged);
+              return merged;
+            });
           }
         });
 
         const unsubFaculty = subscribeToFaculty((firestoreFaculty) => {
-          if (firestoreFaculty && firestoreFaculty.length > 0) {
-            setInnovators(firestoreFaculty);
-            saveItem(STORAGE_KEYS.INNOVATORS, firestoreFaculty);
+          if (firestoreFaculty) {
+            setInnovators((prev) => {
+              const map = new Map<string, LabInnovator>();
+              firestoreFaculty.forEach((f) => map.set(f.id, f));
+              prev.forEach((f) => {
+                if (!map.has(f.id)) {
+                  map.set(f.id, f);
+                  saveFacultyToFirestore(f).catch(() => {});
+                }
+              });
+              const merged = Array.from(map.values());
+              saveItem(STORAGE_KEYS.INNOVATORS, merged);
+              return merged;
+            });
           }
         });
 
@@ -792,6 +838,13 @@ export function usePortalStore() {
     );
     setBatches(updated);
     saveItem(STORAGE_KEYS.BATCHES, updated);
+    if (isFirebaseConfigured) {
+      updated
+        .filter((b) => studentIds.includes(b.id))
+        .forEach((s) => {
+          saveStudentToFirestore(s).catch((e) => console.warn('Firestore student sync note:', e));
+        });
+    }
   };
 
   const addBatchFile = (
@@ -818,12 +871,20 @@ export function usePortalStore() {
     });
     setBatchInfos(updated);
     saveItem(STORAGE_KEYS.BATCH_INFOS, updated);
+    const target = updated.find((b) => b.id === batchId);
+    if (target && isFirebaseConfigured) {
+      saveBatchToFirestore(target).catch((e) => console.warn('Firestore batch file note:', e));
+    }
   };
 
   const assignBatchMentor = (batchId: string, mentorLead: string) => {
     const updated = batchInfos.map((b) => (b.id === batchId ? { ...b, mentorLead } : b));
     setBatchInfos(updated);
     saveItem(STORAGE_KEYS.BATCH_INFOS, updated);
+    const target = updated.find((b) => b.id === batchId);
+    if (target && isFirebaseConfigured) {
+      saveBatchToFirestore(target).catch((e) => console.warn('Firestore mentor update note:', e));
+    }
   };
 
   const resetStudentPassword = (memberId: string) => {

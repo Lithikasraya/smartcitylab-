@@ -11,11 +11,22 @@ import {
 } from 'firebase/firestore';
 import { 
   signInWithEmailAndPassword, 
+  signInAnonymously,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 import { auth, db } from './firebase';
 import { BatchInfo, BatchMember, LabInnovator, ProjectItem } from './data';
 import { UserSession } from './store';
+
+export async function ensureAuthenticated(): Promise<void> {
+  try {
+    if (!auth.currentUser) {
+      await signInAnonymously(auth);
+    }
+  } catch (e) {
+    // If anonymous sign in is disabled or not required, continue
+  }
+}
 
 export interface FirestoreUserProfile {
   uid: string;
@@ -118,9 +129,7 @@ export function subscribeToStudents(callback: (students: BatchMember[]) => void)
     snap.forEach((d) => {
       students.push({ id: d.id, ...d.data() } as BatchMember);
     });
-    if (students.length > 0) {
-      callback(students);
-    }
+    callback(students);
   }, (err) => {
     console.warn('Students live snapshot note:', err);
   });
@@ -128,6 +137,7 @@ export function subscribeToStudents(callback: (students: BatchMember[]) => void)
 
 export async function saveStudentToFirestore(student: BatchMember): Promise<string> {
   try {
+    await ensureAuthenticated();
     const studentRef = doc(db, 'students', student.id);
     const cleanData = sanitizeForFirestore(student);
     await setDoc(studentRef, cleanData, { merge: true });
@@ -140,6 +150,7 @@ export async function saveStudentToFirestore(student: BatchMember): Promise<stri
 
 export async function deleteStudentFromFirestore(studentId: string): Promise<void> {
   try {
+    await ensureAuthenticated();
     await deleteDoc(doc(db, 'students', studentId));
   } catch (error) {
     console.error('Error deleting student from Firestore:', error);
@@ -170,9 +181,7 @@ export function subscribeToProjects(callback: (projects: ProjectItem[]) => void)
     snap.forEach((d) => {
       projects.push({ id: d.id, ...d.data() } as ProjectItem);
     });
-    if (projects.length > 0) {
-      callback(projects);
-    }
+    callback(projects);
   }, (err) => {
     console.warn('Projects live snapshot note:', err);
   });
@@ -180,6 +189,7 @@ export function subscribeToProjects(callback: (projects: ProjectItem[]) => void)
 
 export async function saveProjectToFirestore(project: ProjectItem): Promise<string> {
   try {
+    await ensureAuthenticated();
     const projRef = doc(db, 'projects', project.id);
     const cleanData = sanitizeForFirestore(project);
     await setDoc(projRef, cleanData, { merge: true });
@@ -192,6 +202,7 @@ export async function saveProjectToFirestore(project: ProjectItem): Promise<stri
 
 export async function deleteProjectFromFirestore(projectId: string): Promise<void> {
   try {
+    await ensureAuthenticated();
     await deleteDoc(doc(db, 'projects', projectId));
   } catch (error) {
     console.error('Error deleting project from Firestore:', error);
@@ -222,9 +233,7 @@ export function subscribeToBatches(callback: (batches: BatchInfo[]) => void): Un
     snap.forEach((d) => {
       batches.push({ id: d.id, ...d.data() } as BatchInfo);
     });
-    if (batches.length > 0) {
-      callback(batches);
-    }
+    callback(batches);
   }, (err) => {
     console.warn('Batches live snapshot note:', err);
   });
@@ -232,6 +241,7 @@ export function subscribeToBatches(callback: (batches: BatchInfo[]) => void): Un
 
 export async function saveBatchToFirestore(batch: BatchInfo): Promise<string> {
   try {
+    await ensureAuthenticated();
     const batchRef = doc(db, 'batches', batch.id);
     const cleanData = sanitizeForFirestore(batch);
     await setDoc(batchRef, cleanData, { merge: true });
@@ -244,6 +254,7 @@ export async function saveBatchToFirestore(batch: BatchInfo): Promise<string> {
 
 export async function deleteBatchFromFirestore(batchId: string): Promise<void> {
   try {
+    await ensureAuthenticated();
     await deleteDoc(doc(db, 'batches', batchId));
   } catch (error) {
     console.error('Error deleting batch from Firestore:', error);
@@ -274,29 +285,29 @@ export function subscribeToFaculty(callback: (faculty: LabInnovator[]) => void):
     snap.forEach((d) => {
       faculty.push({ id: d.id, ...d.data() } as LabInnovator);
     });
-    if (faculty.length > 0) {
-      callback(faculty);
-    }
+    callback(faculty);
   }, (err) => {
     console.warn('Faculty live snapshot note:', err);
   });
 }
 
-export async function saveFacultyToFirestore(fac: LabInnovator): Promise<string> {
+export async function saveFacultyToFirestore(faculty: LabInnovator): Promise<string> {
   try {
-    const facRef = doc(db, 'faculty', fac.id);
-    const cleanData = sanitizeForFirestore(fac);
+    await ensureAuthenticated();
+    const facRef = doc(db, 'faculty', faculty.id);
+    const cleanData = sanitizeForFirestore(faculty);
     await setDoc(facRef, cleanData, { merge: true });
-    return fac.id;
+    return faculty.id;
   } catch (error) {
     console.error('Error saving faculty to Firestore:', error);
     throw error;
   }
 }
 
-export async function deleteFacultyFromFirestore(facId: string): Promise<void> {
+export async function deleteFacultyFromFirestore(facultyId: string): Promise<void> {
   try {
-    await deleteDoc(doc(db, 'faculty', facId));
+    await ensureAuthenticated();
+    await deleteDoc(doc(db, 'faculty', facultyId));
   } catch (error) {
     console.error('Error deleting faculty from Firestore:', error);
     throw error;
