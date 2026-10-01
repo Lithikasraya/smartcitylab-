@@ -38,7 +38,10 @@ import {
   fetchBatchesFromFirestore,
   subscribeToBatches,
   saveBatchToFirestore,
-  deleteBatchFromFirestore
+  deleteBatchFromFirestore,
+  subscribeToFaculty,
+  saveFacultyToFirestore,
+  deleteFacultyFromFirestore
 } from './firebaseService';
 
 export interface UserSession {
@@ -144,10 +147,18 @@ export function usePortalStore() {
           }
         });
 
+        const unsubFaculty = subscribeToFaculty((firestoreFaculty) => {
+          if (firestoreFaculty && firestoreFaculty.length > 0) {
+            setInnovators(firestoreFaculty);
+            saveItem(STORAGE_KEYS.INNOVATORS, firestoreFaculty);
+          }
+        });
+
         return () => {
           unsubStudents();
           unsubProjects();
           unsubBatches();
+          unsubFaculty();
         };
       }
     } catch {
@@ -866,6 +877,9 @@ export function usePortalStore() {
     const updated = [...innovators, newFac];
     setInnovators(updated);
     saveItem(STORAGE_KEYS.INNOVATORS, updated);
+    if (isFirebaseConfigured) {
+      saveFacultyToFirestore(newFac).catch((e) => console.warn('Firestore faculty save note:', e));
+    }
     return newFac;
   };
 
@@ -873,12 +887,19 @@ export function usePortalStore() {
     const updated = innovators.map((f) => (f.id === id ? { ...f, ...patch } : f));
     setInnovators(updated);
     saveItem(STORAGE_KEYS.INNOVATORS, updated);
+    const target = updated.find((f) => f.id === id);
+    if (target && isFirebaseConfigured) {
+      saveFacultyToFirestore(target).catch((e) => console.warn('Firestore faculty update note:', e));
+    }
   };
 
   const deleteFaculty = (id: string) => {
     const updated = innovators.filter((f) => f.id !== id);
     setInnovators(updated);
     saveItem(STORAGE_KEYS.INNOVATORS, updated);
+    if (isFirebaseConfigured) {
+      deleteFacultyFromFirestore(id).catch((e) => console.warn('Firestore faculty delete note:', e));
+    }
   };
 
   return {

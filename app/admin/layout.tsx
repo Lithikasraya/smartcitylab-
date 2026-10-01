@@ -17,11 +17,12 @@ import {
   Settings as SettingsIcon,
   Search,
   LogOut,
-  ShieldCheck,
+  ShieldCheck, 
   GraduationCap,
   Layers,
   BookOpen,
-  Newspaper
+  Newspaper,
+  Award
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -58,13 +59,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <>{children}</>;
   }
 
-  // Super Admin Navigation Links for all Admin CRM pages
+  // Super Admin Navigation Links for all Admin Data pages
   const superAdminLinks = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Projects', href: '/admin/projects', icon: FolderGit2 },
     { name: 'Approvals', href: '/admin/approvals', icon: CheckSquare },
-    { name: 'Students CRM', href: '/admin/students', icon: GraduationCap },
+    { name: 'Students Data', href: '/admin/students', icon: GraduationCap },
     { name: 'Batches', href: '/admin/batches', icon: Layers },
+    { name: 'Faculty & Mentors', href: '/admin/faculty', icon: Award },
     { name: 'Teams', href: '/admin/teams', icon: Users },
     { name: 'Quests', href: '/admin/quests', icon: Target },
     { name: 'Blogs', href: '/admin/blogs', icon: BookOpen },
@@ -103,7 +105,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-1.5 mt-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-50 border border-blue-200 text-blue-600">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-              Super Admin CRM
+              Super Admin Console
             </span>
           </div>
         </div>
@@ -154,7 +156,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Search className="w-4 h-4 text-[#6B7280] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search projects, students, quests, news..."
+              placeholder="Search projects, students, cohorts, faculty..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-[#E5E7EB] bg-[#F8F9FA] text-[14px] text-[#0A0A0A] placeholder-[#6B7280] focus:outline-none focus:border-[#2563EB] focus:bg-white transition-colors"

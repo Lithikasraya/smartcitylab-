@@ -14,7 +14,7 @@ import {
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 import { auth, db } from './firebase';
-import { BatchInfo, BatchMember, ProjectItem } from './data';
+import { BatchInfo, BatchMember, LabInnovator, ProjectItem } from './data';
 import { UserSession } from './store';
 
 export interface FirestoreUserProfile {
@@ -247,6 +247,58 @@ export async function deleteBatchFromFirestore(batchId: string): Promise<void> {
     await deleteDoc(doc(db, 'batches', batchId));
   } catch (error) {
     console.error('Error deleting batch from Firestore:', error);
+    throw error;
+  }
+}
+
+// ── Faculty / Innovators Firestore Service ──────────────────────────────────
+export async function fetchFacultyFromFirestore(): Promise<LabInnovator[]> {
+  try {
+    const q = query(collection(db, 'faculty'));
+    const snap = await getDocs(q);
+    const faculty: LabInnovator[] = [];
+    snap.forEach((d) => {
+      faculty.push({ id: d.id, ...d.data() } as LabInnovator);
+    });
+    return faculty;
+  } catch (error) {
+    console.error('Error fetching faculty from Firestore:', error);
+    return [];
+  }
+}
+
+export function subscribeToFaculty(callback: (faculty: LabInnovator[]) => void): Unsubscribe {
+  const q = query(collection(db, 'faculty'));
+  return onSnapshot(q, (snap) => {
+    const faculty: LabInnovator[] = [];
+    snap.forEach((d) => {
+      faculty.push({ id: d.id, ...d.data() } as LabInnovator);
+    });
+    if (faculty.length > 0) {
+      callback(faculty);
+    }
+  }, (err) => {
+    console.warn('Faculty live snapshot note:', err);
+  });
+}
+
+export async function saveFacultyToFirestore(fac: LabInnovator): Promise<string> {
+  try {
+    const facRef = doc(db, 'faculty', fac.id);
+    const cleanData = sanitizeForFirestore(fac);
+    await setDoc(facRef, cleanData, { merge: true });
+    return fac.id;
+  } catch (error) {
+    console.error('Error saving faculty to Firestore:', error);
+    throw error;
+  }
+}
+
+export async function deleteFacultyFromFirestore(facId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'faculty', facId));
+  } catch (error) {
+    console.error('Error deleting faculty from Firestore:', error);
     throw error;
   }
 }

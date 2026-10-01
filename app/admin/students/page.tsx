@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import Link from 'next/link';
 import Card from '@/components/shared/Card';
 import Button from '@/components/shared/Button';
 import { Input } from '@/components/shared/Input';
@@ -274,10 +275,10 @@ export default function AdminStudentsCRMPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E5E7EB]">
         <div>
           <h1 className="text-[28px] sm:text-[32px] font-bold text-[#0A0A0A] tracking-tight">
-            Students & Interns CRM
+            Students Data Registry
           </h1>
           <p className="text-[14px] text-[#6B7280] mt-1">
-            Single student registry: enroll individual students, bulk upload via Excel / CSV, and dynamically assign roles (Student, Team Lead, Mentor, Faculty).
+            Complete student directory: enroll individual students, bulk upload spreadsheets, and manage team roles.
           </p>
         </div>
 
@@ -292,14 +293,16 @@ export default function AdminStudentsCRMPage() {
             <span>Upload Excel / CSV</span>
           </Button>
 
-          <Button 
-            variant="primary" 
-            size="md" 
-            onClick={() => setCreateModalOpen(true)}
-            className="shadow-sm shadow-blue-600/30 hover:shadow-md hover:shadow-blue-600/40"
-          >
-            + Register Student
-          </Button>
+          <Link href="/admin/students/new">
+            <Button 
+              variant="primary" 
+              size="md" 
+              className="shadow-sm shadow-blue-600/30 hover:shadow-md hover:shadow-blue-600/40 flex items-center gap-1.5"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Enroll Student</span>
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -562,13 +565,13 @@ export default function AdminStudentsCRMPage() {
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="inline-flex items-center gap-1 justify-end">
-                          <button
-                            onClick={() => setEditingStudent(student)}
+                          <Link
+                            href={`/admin/students/new?id=${student.id}`}
                             className="p-1.5 rounded text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#E5E7EB] transition-colors"
-                            title="Edit Student Info"
+                            title="Edit Student Record"
                           >
                             <Edit3 className="w-4 h-4" />
-                          </button>
+                          </Link>
                           <button
                             onClick={() => {
                               if (confirm(`Remove ${student.name} from the lab roster?`)) {

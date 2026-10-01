@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import Link from 'next/link';
 import Card from '@/components/shared/Card';
 import Button from '@/components/shared/Button';
 import { Input, Textarea } from '@/components/shared/Input';
@@ -337,35 +338,25 @@ export default function AdminBatchesPage() {
 
         <div className="flex items-center gap-3">
           {activeMainTab === 'cohorts' ? (
-            <Button 
-              variant="primary" 
-              size="md" 
-              onClick={() => {
-                setName(`Batch ${new Date().getFullYear() + 1}`);
-                setYear(String(new Date().getFullYear() + 1));
-                setCreateModalOpen(true);
-              }}
-              className="shadow-sm shadow-blue-600/30 hover:shadow-md hover:shadow-blue-600/40"
-            >
-              + Create New Batch
-            </Button>
+            <Link href="/admin/batches/new">
+              <Button 
+                variant="primary" 
+                size="md" 
+                className="shadow-sm shadow-blue-600/30 hover:shadow-md hover:shadow-blue-600/40"
+              >
+                + Create New Batch
+              </Button>
+            </Link>
           ) : (
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => {
-                setEditingFaculty(null);
-                setFacName('');
-                setFacDesignation('');
-                setFacDepartment('Smart City Lab');
-                setFacPhotoUrl('');
-                setFacBio('');
-                setAddFacultyModalOpen(true);
-              }}
-              className="shadow-sm shadow-blue-600/30 hover:shadow-md hover:shadow-blue-600/40"
-            >
-              + Add Faculty / Mentor
-            </Button>
+            <Link href="/admin/faculty/new">
+              <Button
+                variant="primary"
+                size="md"
+                className="shadow-sm shadow-blue-600/30 hover:shadow-md hover:shadow-blue-600/40"
+              >
+                + Add Faculty Mentor
+              </Button>
+            </Link>
           )}
         </div>
       </div>
@@ -517,13 +508,13 @@ export default function AdminBatchesPage() {
                       </span>
 
                       <div className="inline-flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => setEditingBatch(b)}
+                        <Link
+                          href={`/admin/batches/new?id=${b.id}`}
                           className="p-1.5 rounded text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#E5E7EB] transition-colors"
                           title="Edit Batch Info"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
-                        </button>
+                        </Link>
                         {batchInfos.length > 1 && (
                           <button
                             onClick={() => {
@@ -602,13 +593,15 @@ export default function AdminBatchesPage() {
                       <span>Assign Existing Students</span>
                     </Button>
 
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => setAddStudentModalOpen(true)}
-                    >
-                      + Enroll New Student
-                    </Button>
+                    <Link href={`/admin/students/new?batch=${activeBatch.year}`}>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        icon={<UserPlus className="w-3.5 h-3.5" />}
+                      >
+                        Enroll Student
+                      </Button>
+                    </Link>
                   </div>
                 </div>
 
