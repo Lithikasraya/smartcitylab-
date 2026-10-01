@@ -9,7 +9,7 @@ import { Input, Textarea } from '@/components/shared/Input';
 import MemberAvatar from '@/components/shared/MemberAvatar';
 import { usePortalStore } from '@/lib/store';
 import { ProjectItem } from '@/lib/data';
-import { uploadMediaFile } from '@/lib/mediaService';
+import { uploadMediaFile, getMediaDisplayUrl } from '@/lib/mediaService';
 import { 
   ArrowLeft, 
   Upload, 
@@ -541,7 +541,7 @@ function ProjectEditorContent() {
                 {imageUrl ? (
                   <div className="space-y-3">
                     <div className="relative h-44 w-full max-w-md mx-auto rounded-lg overflow-hidden border border-gray-200 shadow-xs">
-                      <img src={imageUrl} alt="Project Preview" className="w-full h-full object-cover" />
+                      <img src={getMediaDisplayUrl(imageUrl)} alt="Project Preview" className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => setImageUrl('')}
@@ -984,7 +984,7 @@ function ProjectEditorContent() {
             <div className="relative h-48 w-full bg-slate-950 overflow-hidden">
               {videoUrl ? (
                 <div className="relative w-full h-full">
-                  <video src={videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                  <video src={getMediaDisplayUrl(videoUrl)} autoPlay loop muted playsInline className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 pointer-events-none" />
                   <div className="absolute bottom-3 left-3">
                     <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15">
@@ -996,7 +996,7 @@ function ProjectEditorContent() {
                 </div>
               ) : imageUrl ? (
                 <div className="relative w-full h-full">
-                  <img src={imageUrl} alt={title || 'Project'} className="w-full h-full object-cover" />
+                  <img src={getMediaDisplayUrl(imageUrl)} alt={title || 'Project'} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
                 </div>
               ) : (

@@ -33,9 +33,11 @@ export async function POST(req: NextRequest) {
       });
 
       if (cfResponse.ok) {
-        const publicUrl = cfPublicUrl 
-          ? `${cfPublicUrl}/${objectKey}` 
-          : `https://${cfBucket}.${cfAccountId}.r2.cloudflarestorage.com/${objectKey}`;
+        // Use custom public domain if configured (e.g. https://pub-xxx.r2.dev or custom CDN), otherwise serve via /api/media proxy
+        const isPrivateS3Url = cfPublicUrl?.includes('r2.cloudflarestorage.com');
+        const publicUrl = (cfPublicUrl && !isPrivateS3Url)
+          ? `${cfPublicUrl.replace(/\/$/, '')}/${objectKey}`
+          : `/api/media/${objectKey}`;
         
         return NextResponse.json({ 
           success: true, 

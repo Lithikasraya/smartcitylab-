@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Sun, Radio, Eye } from 'lucide-react';
+import { getMediaDisplayUrl } from '@/lib/mediaService';
 
 interface ProjectThumbnailProps {
   imageUrl?: string;
@@ -21,12 +22,15 @@ export default function ProjectThumbnail({
   const [imgError, setImgError] = useState(false);
   const [videoError, setVideoError] = useState(false);
 
+  const displayVideoUrl = getMediaDisplayUrl(videoUrl);
+  const displayImageUrl = getMediaDisplayUrl(imageUrl);
+
   // If a video is provided and hasn't errored, play looping video
-  if (videoUrl && !videoError) {
+  if (displayVideoUrl && !videoError) {
     return (
       <div className={`relative bg-slate-950 overflow-hidden ${className}`}>
         <video
-          src={videoUrl}
+          src={displayVideoUrl}
           autoPlay
           loop
           muted
@@ -43,11 +47,11 @@ export default function ProjectThumbnail({
   }
 
   // If image is provided and hasn't failed to load
-  if (imageUrl && !imgError) {
+  if (displayImageUrl && !imgError) {
     return (
       <div className={`relative bg-slate-900 overflow-hidden ${className}`}>
         <img
-          src={imageUrl}
+          src={displayImageUrl}
           alt={title}
           onError={() => setImgError(true)}
           referrerPolicy="no-referrer"

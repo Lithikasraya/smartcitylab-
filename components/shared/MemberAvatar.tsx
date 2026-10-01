@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { getMediaDisplayUrl } from '@/lib/mediaService';
 
 interface MemberAvatarProps {
   name: string;
@@ -26,7 +27,8 @@ export default function MemberAvatar({
   size = 'md',
   isLead = false,
 }: MemberAvatarProps) {
-  const [imgError, setImgError] = useState(!photoUrl);
+  const displayPhotoUrl = getMediaDisplayUrl(photoUrl);
+  const [imgError, setImgError] = useState(!displayPhotoUrl);
 
   const getInitials = (n: string) => {
     if (!n) return 'S';
@@ -59,9 +61,9 @@ export default function MemberAvatar({
       title={`${name}${role ? ` (${role})` : ''}`}
       className={`relative inline-flex items-center justify-center rounded-full font-bold select-none border-2 border-white shadow-xs flex-shrink-0 ${sizeClasses} ${bgColor} text-white`}
     >
-      {!imgError && photoUrl ? (
+      {!imgError && displayPhotoUrl ? (
         <img
-          src={photoUrl}
+          src={displayPhotoUrl}
           alt={name}
           onError={() => setImgError(true)}
           referrerPolicy="no-referrer"

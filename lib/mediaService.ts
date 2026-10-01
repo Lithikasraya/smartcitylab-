@@ -110,3 +110,22 @@ export async function compressImageToBase64(file: File | Blob, maxWidth = 1280, 
     reader.readAsDataURL(file);
   });
 }
+
+/**
+ * Ensures any stored Cloudflare R2 S3-endpoint URL is seamlessly mapped to the viewable proxy URL
+ */
+export function getMediaDisplayUrl(url?: string): string {
+  if (!url) return '';
+  if (url.includes('.r2.cloudflarestorage.com/')) {
+    const parts = url.split('.r2.cloudflarestorage.com/');
+    if (parts[1]) {
+      // Remove bucket prefix if included
+      const pathWithBucket = parts[1];
+      const slashIndex = pathWithBucket.indexOf('/');
+      const cleanPath = slashIndex !== -1 ? pathWithBucket.substring(slashIndex + 1) : pathWithBucket;
+      return `/api/media/${cleanPath}`;
+    }
+  }
+  return url;
+}
+
