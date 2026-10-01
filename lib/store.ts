@@ -29,19 +29,34 @@ import { isFirebaseConfigured } from './firebase';
 import { 
   saveStudentToFirestore, 
   deleteStudentFromFirestore,
-  fetchStudentsFromFirestore,
   subscribeToStudents,
-  fetchProjectsFromFirestore,
   subscribeToProjects,
   saveProjectToFirestore,
   deleteProjectFromFirestore,
-  fetchBatchesFromFirestore,
   subscribeToBatches,
   saveBatchToFirestore,
   deleteBatchFromFirestore,
   subscribeToFaculty,
   saveFacultyToFirestore,
-  deleteFacultyFromFirestore
+  deleteFacultyFromFirestore,
+  subscribeToNews,
+  saveNewsToFirestore,
+  deleteNewsFromFirestore,
+  subscribeToBlogs,
+  saveBlogToFirestore,
+  deleteBlogFromFirestore,
+  subscribeToQuests,
+  saveQuestToFirestore,
+  deleteQuestFromFirestore,
+  subscribeToTeams,
+  saveTeamToFirestore,
+  deleteTeamFromFirestore,
+  subscribeToTasks,
+  saveTaskToFirestore,
+  deleteTaskFromFirestore,
+  subscribeToSubmissions,
+  saveSubmissionToFirestore,
+  deleteSubmissionFromFirestore
 } from './firebaseService';
 
 export interface UserSession {
@@ -200,11 +215,125 @@ export function usePortalStore() {
           }
         });
 
+        const unsubNews = subscribeToNews((firestoreNews) => {
+          if (firestoreNews) {
+            setNews((prev) => {
+              const map = new Map<string, NewsItem>();
+              firestoreNews.forEach((n) => map.set(n.id, n));
+              prev.forEach((n) => {
+                if (!map.has(n.id)) {
+                  map.set(n.id, n);
+                  saveNewsToFirestore(n).catch(() => {});
+                }
+              });
+              const merged = Array.from(map.values());
+              saveItem(STORAGE_KEYS.NEWS, merged);
+              return merged;
+            });
+          }
+        });
+
+        const unsubBlogs = subscribeToBlogs((firestoreBlogs) => {
+          if (firestoreBlogs) {
+            setBlogs((prev) => {
+              const map = new Map<string, BlogItem>();
+              firestoreBlogs.forEach((b) => map.set(b.id, b));
+              prev.forEach((b) => {
+                if (!map.has(b.id)) {
+                  map.set(b.id, b);
+                  saveBlogToFirestore(b).catch(() => {});
+                }
+              });
+              const merged = Array.from(map.values());
+              saveItem(STORAGE_KEYS.BLOGS, merged);
+              return merged;
+            });
+          }
+        });
+
+        const unsubQuests = subscribeToQuests((firestoreQuests) => {
+          if (firestoreQuests) {
+            setQuests((prev) => {
+              const map = new Map<string, QuestItem>();
+              firestoreQuests.forEach((q) => map.set(q.id, q));
+              prev.forEach((q) => {
+                if (!map.has(q.id)) {
+                  map.set(q.id, q);
+                  saveQuestToFirestore(q).catch(() => {});
+                }
+              });
+              const merged = Array.from(map.values());
+              saveItem(STORAGE_KEYS.QUESTS, merged);
+              return merged;
+            });
+          }
+        });
+
+        const unsubTeams = subscribeToTeams((firestoreTeams) => {
+          if (firestoreTeams) {
+            setTeams((prev) => {
+              const map = new Map<string, TeamItem>();
+              firestoreTeams.forEach((t) => map.set(t.id, t));
+              prev.forEach((t) => {
+                if (!map.has(t.id)) {
+                  map.set(t.id, t);
+                  saveTeamToFirestore(t).catch(() => {});
+                }
+              });
+              const merged = Array.from(map.values());
+              saveItem(STORAGE_KEYS.TEAMS, merged);
+              return merged;
+            });
+          }
+        });
+
+        const unsubTasks = subscribeToTasks((firestoreTasks) => {
+          if (firestoreTasks) {
+            setTasks((prev) => {
+              const map = new Map<string, TaskItem>();
+              firestoreTasks.forEach((t) => map.set(t.id, t));
+              prev.forEach((t) => {
+                if (!map.has(t.id)) {
+                  map.set(t.id, t);
+                  saveTaskToFirestore(t).catch(() => {});
+                }
+              });
+              const merged = Array.from(map.values());
+              saveItem(STORAGE_KEYS.TASKS, merged);
+              return merged;
+            });
+          }
+        });
+
+        const unsubSubmissions = subscribeToSubmissions((firestoreSubs) => {
+          if (firestoreSubs) {
+            setSubmissions((prev) => {
+              const map = new Map<string, SubmissionItem>();
+              firestoreSubs.forEach((s) => map.set(s.id, s));
+              prev.forEach((s) => {
+                if (!map.has(s.id)) {
+                  map.set(s.id, s);
+                  saveSubmissionToFirestore(s).catch(() => {});
+                }
+              });
+              const merged = Array.from(map.values());
+              saveItem(STORAGE_KEYS.SUBMISSIONS, merged);
+              return merged;
+            });
+          }
+        });
+
         return () => {
           unsubStudents();
           unsubProjects();
           unsubBatches();
           unsubFaculty();
+          unsubNews();
+          unsubBlogs();
+          unsubQuests();
+          unsubTeams();
+          unsubTasks();
+          unsubSubmissions();
         };
       }
     } catch {
@@ -303,11 +432,13 @@ export function usePortalStore() {
     const sub = submissions.find((s) => s.id === subId);
     if (!sub) return;
 
-    const nextSubs = submissions.map((s) =>
-      s.id === subId ? { ...s, status: 'approved' as const } : s
-    );
+    const updatedSub: SubmissionItem = { ...sub, status: 'approved' as const };
+    const nextSubs = submissions.map((s) => (s.id === subId ? updatedSub : s));
     setSubmissions(nextSubs);
     saveItem(STORAGE_KEYS.SUBMISSIONS, nextSubs);
+    if (isFirebaseConfigured) {
+      saveSubmissionToFirestore(updatedSub).catch((e) => console.warn('Firestore sub sync note:', e));
+    }
 
     if (sub.type === 'project') {
       const newProj: ProjectItem = {
@@ -332,6 +463,9 @@ export function usePortalStore() {
       const updatedProjects = [newProj, ...projects];
       setProjects(updatedProjects);
       saveItem(STORAGE_KEYS.PROJECTS, updatedProjects);
+      if (isFirebaseConfigured) {
+        saveProjectToFirestore(newProj).catch((e) => console.warn('Firestore project save note:', e));
+      }
     } else if (sub.type === 'news') {
       const newNews: NewsItem = {
         id: `news-${Date.now()}`,
@@ -349,6 +483,9 @@ export function usePortalStore() {
       const updatedNews = [newNews, ...news];
       setNews(updatedNews);
       saveItem(STORAGE_KEYS.NEWS, updatedNews);
+      if (isFirebaseConfigured) {
+        saveNewsToFirestore(newNews).catch((e) => console.warn('Firestore news save note:', e));
+      }
     } else if (sub.type === 'blog') {
       const newBlog: BlogItem = {
         id: `blog-${Date.now()}`,
@@ -373,15 +510,30 @@ export function usePortalStore() {
       const updatedBlogs = [newBlog, ...blogs];
       setBlogs(updatedBlogs);
       saveItem(STORAGE_KEYS.BLOGS, updatedBlogs);
+      if (isFirebaseConfigured) {
+        saveBlogToFirestore(newBlog).catch((e) => console.warn('Firestore blog save note:', e));
+      }
     }
   };
 
   const rejectSubmission = (subId: string, feedback?: string) => {
-    const nextSubs = submissions.map((s) =>
-      s.id === subId ? { ...s, status: 'rejected' as const, feedback } : s
-    );
+    const target = submissions.find((s) => s.id === subId);
+    const updatedSub = target ? { ...target, status: 'rejected' as const, feedback } : undefined;
+    const nextSubs = submissions.map((s) => (s.id === subId ? { ...s, status: 'rejected' as const, feedback } : s));
     setSubmissions(nextSubs);
     saveItem(STORAGE_KEYS.SUBMISSIONS, nextSubs);
+    if (updatedSub && isFirebaseConfigured) {
+      saveSubmissionToFirestore(updatedSub).catch((e) => console.warn('Firestore sub reject note:', e));
+    }
+  };
+
+  const deleteSubmission = (subId: string) => {
+    const nextSubs = submissions.filter((s) => s.id !== subId);
+    setSubmissions(nextSubs);
+    saveItem(STORAGE_KEYS.SUBMISSIONS, nextSubs);
+    if (isFirebaseConfigured) {
+      deleteSubmissionFromFirestore(subId).catch((e) => console.warn('Firestore sub delete note:', e));
+    }
   };
 
   const addQuickSubmission = (submission: Omit<SubmissionItem, 'id' | 'submittedAt' | 'status'>) => {
@@ -394,6 +546,9 @@ export function usePortalStore() {
     const updated = [newSub, ...submissions];
     setSubmissions(updated);
     saveItem(STORAGE_KEYS.SUBMISSIONS, updated);
+    if (isFirebaseConfigured) {
+      saveSubmissionToFirestore(newSub).catch((e) => console.warn('Firestore quick sub note:', e));
+    }
     return newSub;
   };
 
@@ -407,7 +562,29 @@ export function usePortalStore() {
     const updated = [newQuest, ...quests];
     setQuests(updated);
     saveItem(STORAGE_KEYS.QUESTS, updated);
+    if (isFirebaseConfigured) {
+      saveQuestToFirestore(newQuest).catch((e) => console.warn('Firestore quest save note:', e));
+    }
     return newQuest;
+  };
+
+  const updateQuest = (questId: string, patch: Partial<QuestItem>) => {
+    const updated = quests.map((q) => (q.id === questId ? { ...q, ...patch } : q));
+    setQuests(updated);
+    saveItem(STORAGE_KEYS.QUESTS, updated);
+    const target = updated.find((q) => q.id === questId);
+    if (target && isFirebaseConfigured) {
+      saveQuestToFirestore(target).catch((e) => console.warn('Firestore quest update note:', e));
+    }
+  };
+
+  const deleteQuest = (questId: string) => {
+    const updated = quests.filter((q) => q.id !== questId);
+    setQuests(updated);
+    saveItem(STORAGE_KEYS.QUESTS, updated);
+    if (isFirebaseConfigured) {
+      deleteQuestFromFirestore(questId).catch((e) => console.warn('Firestore quest delete note:', e));
+    }
   };
 
   const applyForQuest = (questId: string, teamName: string) => {
@@ -416,6 +593,10 @@ export function usePortalStore() {
     );
     setQuests(updated);
     saveItem(STORAGE_KEYS.QUESTS, updated);
+    const target = updated.find((q) => q.id === questId);
+    if (target && isFirebaseConfigured) {
+      saveQuestToFirestore(target).catch((e) => console.warn('Firestore quest apply note:', e));
+    }
   };
 
   const assignTask = (taskData: Omit<TaskItem, 'id' | 'status'>) => {
@@ -427,7 +608,29 @@ export function usePortalStore() {
     const updated = [newTask, ...tasks];
     setTasks(updated);
     saveItem(STORAGE_KEYS.TASKS, updated);
+    if (isFirebaseConfigured) {
+      saveTaskToFirestore(newTask).catch((e) => console.warn('Firestore task assign note:', e));
+    }
     return newTask;
+  };
+
+  const updateTask = (taskId: string, patch: Partial<TaskItem>) => {
+    const updated = tasks.map((t) => (t.id === taskId ? { ...t, ...patch } : t));
+    setTasks(updated);
+    saveItem(STORAGE_KEYS.TASKS, updated);
+    const target = updated.find((t) => t.id === taskId);
+    if (target && isFirebaseConfigured) {
+      saveTaskToFirestore(target).catch((e) => console.warn('Firestore task update note:', e));
+    }
+  };
+
+  const deleteTask = (taskId: string) => {
+    const updated = tasks.filter((t) => t.id !== taskId);
+    setTasks(updated);
+    saveItem(STORAGE_KEYS.TASKS, updated);
+    if (isFirebaseConfigured) {
+      deleteTaskFromFirestore(taskId).catch((e) => console.warn('Firestore task delete note:', e));
+    }
   };
 
   const submitTaskVideo = (taskId: string, videoUrl: string) => {
@@ -443,6 +646,10 @@ export function usePortalStore() {
     );
     setTasks(updated);
     saveItem(STORAGE_KEYS.TASKS, updated);
+    const target = updated.find((t) => t.id === taskId);
+    if (target && isFirebaseConfigured) {
+      saveTaskToFirestore(target).catch((e) => console.warn('Firestore task submit note:', e));
+    }
   };
 
   const createTeam = (teamData: Omit<TeamItem, 'id'>) => {
@@ -453,13 +660,39 @@ export function usePortalStore() {
     const updated = [...teams, newTeam];
     setTeams(updated);
     saveItem(STORAGE_KEYS.TEAMS, updated);
+    if (isFirebaseConfigured) {
+      saveTeamToFirestore(newTeam).catch((e) => console.warn('Firestore team save note:', e));
+    }
     return newTeam;
+  };
+
+  const updateTeam = (teamId: string, patch: Partial<TeamItem>) => {
+    const updated = teams.map((t) => (t.id === teamId ? { ...t, ...patch } : t));
+    setTeams(updated);
+    saveItem(STORAGE_KEYS.TEAMS, updated);
+    const target = updated.find((t) => t.id === teamId);
+    if (target && isFirebaseConfigured) {
+      saveTeamToFirestore(target).catch((e) => console.warn('Firestore team update note:', e));
+    }
+  };
+
+  const deleteTeam = (teamId: string) => {
+    const updated = teams.filter((t) => t.id !== teamId);
+    setTeams(updated);
+    saveItem(STORAGE_KEYS.TEAMS, updated);
+    if (isFirebaseConfigured) {
+      deleteTeamFromFirestore(teamId).catch((e) => console.warn('Firestore team delete note:', e));
+    }
   };
 
   const updateTeamColor = (teamId: string, colorTheme: TeamItem['colorTheme']) => {
     const updated = teams.map((t) => (t.id === teamId ? { ...t, colorTheme } : t));
     setTeams(updated);
     saveItem(STORAGE_KEYS.TEAMS, updated);
+    const target = updated.find((t) => t.id === teamId);
+    if (target && isFirebaseConfigured) {
+      saveTeamToFirestore(target).catch((e) => console.warn('Firestore team color note:', e));
+    }
 
     if (user.teamId === teamId) {
       const updatedUser = { ...user, teamColor: colorTheme };
@@ -480,6 +713,10 @@ export function usePortalStore() {
     });
     setTeams(updated);
     saveItem(STORAGE_KEYS.TEAMS, updated);
+    const target = updated.find((t) => t.id === teamId);
+    if (target && isFirebaseConfigured) {
+      saveTeamToFirestore(target).catch((e) => console.warn('Firestore attendance note:', e));
+    }
   };
 
   const addProject = (projectData: Omit<ProjectItem, 'id'>) => {
@@ -538,6 +775,10 @@ export function usePortalStore() {
     });
     setNews(updated);
     saveItem(STORAGE_KEYS.NEWS, updated);
+    const target = updated.find((n) => n.id === id);
+    if (target && isFirebaseConfigured) {
+      saveNewsToFirestore(target).catch((e) => console.warn('Firestore news toggle note:', e));
+    }
   };
 
   const toggleBlogVisibility = (id: string) => {
@@ -548,6 +789,10 @@ export function usePortalStore() {
     });
     setBlogs(updated);
     saveItem(STORAGE_KEYS.BLOGS, updated);
+    const target = updated.find((b) => b.id === id);
+    if (target && isFirebaseConfigured) {
+      saveBlogToFirestore(target).catch((e) => console.warn('Firestore blog toggle note:', e));
+    }
   };
 
   const addBlog = (blogData: Omit<BlogItem, 'id' | 'slug' | 'views'>) => {
@@ -561,6 +806,9 @@ export function usePortalStore() {
     const updated = [newBlog, ...blogs];
     setBlogs(updated);
     saveItem(STORAGE_KEYS.BLOGS, updated);
+    if (isFirebaseConfigured) {
+      saveBlogToFirestore(newBlog).catch((e) => console.warn('Firestore blog save note:', e));
+    }
     return newBlog;
   };
 
@@ -568,12 +816,19 @@ export function usePortalStore() {
     const updated = blogs.map((b) => (b.id === id ? { ...b, ...data } : b));
     setBlogs(updated);
     saveItem(STORAGE_KEYS.BLOGS, updated);
+    const target = updated.find((b) => b.id === id);
+    if (target && isFirebaseConfigured) {
+      saveBlogToFirestore(target).catch((e) => console.warn('Firestore blog update note:', e));
+    }
   };
 
   const deleteBlog = (id: string) => {
     const updated = blogs.filter((b) => b.id !== id);
     setBlogs(updated);
     saveItem(STORAGE_KEYS.BLOGS, updated);
+    if (isFirebaseConfigured) {
+      deleteBlogFromFirestore(id).catch((e) => console.warn('Firestore blog delete note:', e));
+    }
   };
 
   const incrementBlogViews = (idOrSlug: string) => {
@@ -585,6 +840,10 @@ export function usePortalStore() {
     });
     setBlogs(updated);
     saveItem(STORAGE_KEYS.BLOGS, updated);
+    const target = updated.find((b) => b.id === idOrSlug || b.slug === idOrSlug);
+    if (target && isFirebaseConfigured) {
+      saveBlogToFirestore(target).catch((e) => console.warn('Firestore blog view note:', e));
+    }
   };
 
   const toggleBlogLike = (idOrSlug: string) => {
@@ -598,6 +857,10 @@ export function usePortalStore() {
     });
     setBlogs(updated);
     saveItem(STORAGE_KEYS.BLOGS, updated);
+    const target = updated.find((b) => b.id === idOrSlug || b.slug === idOrSlug);
+    if (target && isFirebaseConfigured) {
+      saveBlogToFirestore(target).catch((e) => console.warn('Firestore blog like note:', e));
+    }
     return nextLikes;
   };
 
@@ -611,6 +874,9 @@ export function usePortalStore() {
     const updated = [newItem, ...news];
     setNews(updated);
     saveItem(STORAGE_KEYS.NEWS, updated);
+    if (isFirebaseConfigured) {
+      saveNewsToFirestore(newItem).catch((e) => console.warn('Firestore news save note:', e));
+    }
     return newItem;
   };
 
@@ -618,12 +884,19 @@ export function usePortalStore() {
     const updated = news.map((n) => (n.id === id ? { ...n, ...data } : n));
     setNews(updated);
     saveItem(STORAGE_KEYS.NEWS, updated);
+    const target = updated.find((n) => n.id === id);
+    if (target && isFirebaseConfigured) {
+      saveNewsToFirestore(target).catch((e) => console.warn('Firestore news update note:', e));
+    }
   };
 
   const deleteNews = (id: string) => {
     const updated = news.filter((n) => n.id !== id);
     setNews(updated);
     saveItem(STORAGE_KEYS.NEWS, updated);
+    if (isFirebaseConfigured) {
+      deleteNewsFromFirestore(id).catch((e) => console.warn('Firestore news delete note:', e));
+    }
   };
 
   const addStudentToCRM = (student: Partial<BatchMember>) => {
@@ -710,39 +983,46 @@ export function usePortalStore() {
 
     // Also update teams if member is in a team
     const targetMember = batches.find((b) => b.id === memberId);
-    if (targetMember && targetMember.teamName && targetMember.teamName !== 'Unassigned') {
-      const updatedTeams = teams.map((t) => {
-        if (t.name === targetMember.teamName) {
-          if (isLead) {
-            return {
-              ...t,
-              teamLead: {
-                id: targetMember.id,
-                name: targetMember.name,
-                email: targetMember.email,
-                rollNo: targetMember.rollNo,
-              },
-              members: t.members.map((m) =>
-                m.id === memberId || m.rollNo === targetMember.rollNo
-                  ? { ...m, role: 'Team Lead' }
-                  : m
-              ),
-            };
-          } else {
-            return {
-              ...t,
-              members: t.members.map((m) =>
-                m.id === memberId || m.rollNo === targetMember.rollNo
-                  ? { ...m, role: newRole }
-                  : m
-              ),
-            };
+    if (targetMember) {
+      if (isFirebaseConfigured) {
+        const updatedTarget = updatedBatches.find((b) => b.id === memberId);
+        if (updatedTarget) saveStudentToFirestore(updatedTarget).catch((e) => console.warn('Firestore role sync note:', e));
+      }
+
+      if (targetMember.teamName && targetMember.teamName !== 'Unassigned') {
+        const updatedTeams = teams.map((t) => {
+          if (t.name === targetMember.teamName) {
+            const nextT = isLead
+              ? {
+                  ...t,
+                  teamLead: {
+                    id: targetMember.id,
+                    name: targetMember.name,
+                    email: targetMember.email,
+                    rollNo: targetMember.rollNo,
+                  },
+                  members: t.members.map((m) =>
+                    m.id === memberId || m.rollNo === targetMember.rollNo
+                      ? { ...m, role: 'Team Lead' }
+                      : m
+                  ),
+                }
+              : {
+                  ...t,
+                  members: t.members.map((m) =>
+                    m.id === memberId || m.rollNo === targetMember.rollNo
+                      ? { ...m, role: newRole }
+                      : m
+                  ),
+                };
+            if (isFirebaseConfigured) saveTeamToFirestore(nextT).catch((e) => console.warn('Firestore team sync note:', e));
+            return nextT;
           }
-        }
-        return t;
-      });
-      setTeams(updatedTeams);
-      saveItem(STORAGE_KEYS.TEAMS, updatedTeams);
+          return t;
+        });
+        setTeams(updatedTeams);
+        saveItem(STORAGE_KEYS.TEAMS, updatedTeams);
+      }
     }
   };
 
@@ -764,6 +1044,11 @@ export function usePortalStore() {
     setBatches(updatedBatches);
     saveItem(STORAGE_KEYS.BATCHES, updatedBatches);
 
+    const updatedTargetStudent = updatedBatches.find((b) => b.id === memberId);
+    if (updatedTargetStudent && isFirebaseConfigured) {
+      saveStudentToFirestore(updatedTargetStudent).catch((e) => console.warn('Firestore student team sync note:', e));
+    }
+
     // Sync to teams array
     const updatedTeams = teams.map((t) => {
       // Remove from previous team if any
@@ -779,7 +1064,7 @@ export function usePortalStore() {
           attendance: 100,
         };
         const newMembers = [...cleanedMembers, newRosterMember];
-        return {
+        const nextTeam = {
           ...t,
           membersCount: newMembers.length,
           members: newMembers,
@@ -792,13 +1077,21 @@ export function usePortalStore() {
               }
             : t.teamLead,
         };
+        if (isFirebaseConfigured) {
+          saveTeamToFirestore(nextTeam).catch((e) => console.warn('Firestore team sync note:', e));
+        }
+        return nextTeam;
       }
 
-      return {
+      const nextOther = {
         ...t,
         membersCount: cleanedMembers.length,
         members: cleanedMembers,
       };
+      if (cleanedMembers.length !== t.members.length && isFirebaseConfigured) {
+        saveTeamToFirestore(nextOther).catch((e) => console.warn('Firestore team sync note:', e));
+      }
+      return nextOther;
     });
 
     setTeams(updatedTeams);
@@ -819,14 +1112,23 @@ export function usePortalStore() {
     setBatches(updatedBatches);
     saveItem(STORAGE_KEYS.BATCHES, updatedBatches);
 
+    const updatedStudent = updatedBatches.find((b) => b.id === memberId);
+    if (updatedStudent && isFirebaseConfigured) {
+      saveStudentToFirestore(updatedStudent).catch((e) => console.warn('Firestore student unassign note:', e));
+    }
+
     // Remove from team roster
     const updatedTeams = teams.map((t) => {
       const filtered = t.members.filter((m) => m.id !== memberId);
-      return {
+      const nextT = {
         ...t,
         members: filtered,
         membersCount: filtered.length,
       };
+      if (filtered.length !== t.members.length && isFirebaseConfigured) {
+        saveTeamToFirestore(nextT).catch((e) => console.warn('Firestore team unassign note:', e));
+      }
+      return nextT;
     });
     setTeams(updatedTeams);
     saveItem(STORAGE_KEYS.TEAMS, updatedTeams);
@@ -1014,12 +1316,19 @@ export function usePortalStore() {
     bulkAddInterns,
     approveSubmission,
     rejectSubmission,
+    deleteSubmission,
     addQuickSubmission,
     postQuest,
+    updateQuest,
+    deleteQuest,
     applyForQuest,
     assignTask,
+    updateTask,
+    deleteTask,
     submitTaskVideo,
     createTeam,
+    updateTeam,
+    deleteTeam,
     updateTeamColor,
     markAttendance,
   };

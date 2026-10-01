@@ -15,7 +15,18 @@ import {
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 import { auth, db } from './firebase';
-import { BatchInfo, BatchMember, LabInnovator, ProjectItem } from './data';
+import { 
+  BatchInfo, 
+  BatchMember, 
+  LabInnovator, 
+  ProjectItem, 
+  NewsItem, 
+  BlogItem, 
+  QuestItem, 
+  TeamItem, 
+  TaskItem, 
+  SubmissionItem 
+} from './data';
 import { UserSession } from './store';
 
 export async function ensureAuthenticated(): Promise<void> {
@@ -310,6 +321,318 @@ export async function deleteFacultyFromFirestore(facultyId: string): Promise<voi
     await deleteDoc(doc(db, 'faculty', facultyId));
   } catch (error) {
     console.error('Error deleting faculty from Firestore:', error);
+    throw error;
+  }
+}
+
+// ── News Firestore Service ──────────────────────────────────────────────────
+export async function fetchNewsFromFirestore(): Promise<NewsItem[]> {
+  try {
+    const q = query(collection(db, 'news'));
+    const snap = await getDocs(q);
+    const news: NewsItem[] = [];
+    snap.forEach((d) => {
+      news.push({ id: d.id, ...d.data() } as NewsItem);
+    });
+    return news;
+  } catch (error) {
+    console.error('Error fetching news from Firestore:', error);
+    return [];
+  }
+}
+
+export function subscribeToNews(callback: (news: NewsItem[]) => void): Unsubscribe {
+  const q = query(collection(db, 'news'));
+  return onSnapshot(q, (snap) => {
+    const news: NewsItem[] = [];
+    snap.forEach((d) => {
+      news.push({ id: d.id, ...d.data() } as NewsItem);
+    });
+    callback(news);
+  }, (err) => {
+    console.warn('News live snapshot note:', err);
+  });
+}
+
+export async function saveNewsToFirestore(newsItem: NewsItem): Promise<string> {
+  try {
+    await ensureAuthenticated();
+    const newsRef = doc(db, 'news', newsItem.id);
+    const cleanData = sanitizeForFirestore(newsItem);
+    await setDoc(newsRef, cleanData, { merge: true });
+    return newsItem.id;
+  } catch (error) {
+    console.error('Error saving news to Firestore:', error);
+    throw error;
+  }
+}
+
+export async function deleteNewsFromFirestore(newsId: string): Promise<void> {
+  try {
+    await ensureAuthenticated();
+    await deleteDoc(doc(db, 'news', newsId));
+  } catch (error) {
+    console.error('Error deleting news from Firestore:', error);
+    throw error;
+  }
+}
+
+// ── Blogs Firestore Service ─────────────────────────────────────────────────
+export async function fetchBlogsFromFirestore(): Promise<BlogItem[]> {
+  try {
+    const q = query(collection(db, 'blogs'));
+    const snap = await getDocs(q);
+    const blogs: BlogItem[] = [];
+    snap.forEach((d) => {
+      blogs.push({ id: d.id, ...d.data() } as BlogItem);
+    });
+    return blogs;
+  } catch (error) {
+    console.error('Error fetching blogs from Firestore:', error);
+    return [];
+  }
+}
+
+export function subscribeToBlogs(callback: (blogs: BlogItem[]) => void): Unsubscribe {
+  const q = query(collection(db, 'blogs'));
+  return onSnapshot(q, (snap) => {
+    const blogs: BlogItem[] = [];
+    snap.forEach((d) => {
+      blogs.push({ id: d.id, ...d.data() } as BlogItem);
+    });
+    callback(blogs);
+  }, (err) => {
+    console.warn('Blogs live snapshot note:', err);
+  });
+}
+
+export async function saveBlogToFirestore(blogItem: BlogItem): Promise<string> {
+  try {
+    await ensureAuthenticated();
+    const blogRef = doc(db, 'blogs', blogItem.id);
+    const cleanData = sanitizeForFirestore(blogItem);
+    await setDoc(blogRef, cleanData, { merge: true });
+    return blogItem.id;
+  } catch (error) {
+    console.error('Error saving blog to Firestore:', error);
+    throw error;
+  }
+}
+
+export async function deleteBlogFromFirestore(blogId: string): Promise<void> {
+  try {
+    await ensureAuthenticated();
+    await deleteDoc(doc(db, 'blogs', blogId));
+  } catch (error) {
+    console.error('Error deleting blog from Firestore:', error);
+    throw error;
+  }
+}
+
+// ── Quests Firestore Service ────────────────────────────────────────────────
+export async function fetchQuestsFromFirestore(): Promise<QuestItem[]> {
+  try {
+    const q = query(collection(db, 'quests'));
+    const snap = await getDocs(q);
+    const quests: QuestItem[] = [];
+    snap.forEach((d) => {
+      quests.push({ id: d.id, ...d.data() } as QuestItem);
+    });
+    return quests;
+  } catch (error) {
+    console.error('Error fetching quests from Firestore:', error);
+    return [];
+  }
+}
+
+export function subscribeToQuests(callback: (quests: QuestItem[]) => void): Unsubscribe {
+  const q = query(collection(db, 'quests'));
+  return onSnapshot(q, (snap) => {
+    const quests: QuestItem[] = [];
+    snap.forEach((d) => {
+      quests.push({ id: d.id, ...d.data() } as QuestItem);
+    });
+    callback(quests);
+  }, (err) => {
+    console.warn('Quests live snapshot note:', err);
+  });
+}
+
+export async function saveQuestToFirestore(questItem: QuestItem): Promise<string> {
+  try {
+    await ensureAuthenticated();
+    const questRef = doc(db, 'quests', questItem.id);
+    const cleanData = sanitizeForFirestore(questItem);
+    await setDoc(questRef, cleanData, { merge: true });
+    return questItem.id;
+  } catch (error) {
+    console.error('Error saving quest to Firestore:', error);
+    throw error;
+  }
+}
+
+export async function deleteQuestFromFirestore(questId: string): Promise<void> {
+  try {
+    await ensureAuthenticated();
+    await deleteDoc(doc(db, 'quests', questId));
+  } catch (error) {
+    console.error('Error deleting quest from Firestore:', error);
+    throw error;
+  }
+}
+
+// ── Teams Firestore Service ─────────────────────────────────────────────────
+export async function fetchTeamsFromFirestore(): Promise<TeamItem[]> {
+  try {
+    const q = query(collection(db, 'teams'));
+    const snap = await getDocs(q);
+    const teams: TeamItem[] = [];
+    snap.forEach((d) => {
+      teams.push({ id: d.id, ...d.data() } as TeamItem);
+    });
+    return teams;
+  } catch (error) {
+    console.error('Error fetching teams from Firestore:', error);
+    return [];
+  }
+}
+
+export function subscribeToTeams(callback: (teams: TeamItem[]) => void): Unsubscribe {
+  const q = query(collection(db, 'teams'));
+  return onSnapshot(q, (snap) => {
+    const teams: TeamItem[] = [];
+    snap.forEach((d) => {
+      teams.push({ id: d.id, ...d.data() } as TeamItem);
+    });
+    callback(teams);
+  }, (err) => {
+    console.warn('Teams live snapshot note:', err);
+  });
+}
+
+export async function saveTeamToFirestore(teamItem: TeamItem): Promise<string> {
+  try {
+    await ensureAuthenticated();
+    const teamRef = doc(db, 'teams', teamItem.id);
+    const cleanData = sanitizeForFirestore(teamItem);
+    await setDoc(teamRef, cleanData, { merge: true });
+    return teamItem.id;
+  } catch (error) {
+    console.error('Error saving team to Firestore:', error);
+    throw error;
+  }
+}
+
+export async function deleteTeamFromFirestore(teamId: string): Promise<void> {
+  try {
+    await ensureAuthenticated();
+    await deleteDoc(doc(db, 'teams', teamId));
+  } catch (error) {
+    console.error('Error deleting team from Firestore:', error);
+    throw error;
+  }
+}
+
+// ── Tasks Firestore Service ─────────────────────────────────────────────────
+export async function fetchTasksFromFirestore(): Promise<TaskItem[]> {
+  try {
+    const q = query(collection(db, 'tasks'));
+    const snap = await getDocs(q);
+    const tasks: TaskItem[] = [];
+    snap.forEach((d) => {
+      tasks.push({ id: d.id, ...d.data() } as TaskItem);
+    });
+    return tasks;
+  } catch (error) {
+    console.error('Error fetching tasks from Firestore:', error);
+    return [];
+  }
+}
+
+export function subscribeToTasks(callback: (tasks: TaskItem[]) => void): Unsubscribe {
+  const q = query(collection(db, 'tasks'));
+  return onSnapshot(q, (snap) => {
+    const tasks: TaskItem[] = [];
+    snap.forEach((d) => {
+      tasks.push({ id: d.id, ...d.data() } as TaskItem);
+    });
+    callback(tasks);
+  }, (err) => {
+    console.warn('Tasks live snapshot note:', err);
+  });
+}
+
+export async function saveTaskToFirestore(taskItem: TaskItem): Promise<string> {
+  try {
+    await ensureAuthenticated();
+    const taskRef = doc(db, 'tasks', taskItem.id);
+    const cleanData = sanitizeForFirestore(taskItem);
+    await setDoc(taskRef, cleanData, { merge: true });
+    return taskItem.id;
+  } catch (error) {
+    console.error('Error saving task to Firestore:', error);
+    throw error;
+  }
+}
+
+export async function deleteTaskFromFirestore(taskId: string): Promise<void> {
+  try {
+    await ensureAuthenticated();
+    await deleteDoc(doc(db, 'tasks', taskId));
+  } catch (error) {
+    console.error('Error deleting task from Firestore:', error);
+    throw error;
+  }
+}
+
+// ── Submissions Firestore Service ───────────────────────────────────────────
+export async function fetchSubmissionsFromFirestore(): Promise<SubmissionItem[]> {
+  try {
+    const q = query(collection(db, 'submissions'));
+    const snap = await getDocs(q);
+    const submissions: SubmissionItem[] = [];
+    snap.forEach((d) => {
+      submissions.push({ id: d.id, ...d.data() } as SubmissionItem);
+    });
+    return submissions;
+  } catch (error) {
+    console.error('Error fetching submissions from Firestore:', error);
+    return [];
+  }
+}
+
+export function subscribeToSubmissions(callback: (submissions: SubmissionItem[]) => void): Unsubscribe {
+  const q = query(collection(db, 'submissions'));
+  return onSnapshot(q, (snap) => {
+    const submissions: SubmissionItem[] = [];
+    snap.forEach((d) => {
+      submissions.push({ id: d.id, ...d.data() } as SubmissionItem);
+    });
+    callback(submissions);
+  }, (err) => {
+    console.warn('Submissions live snapshot note:', err);
+  });
+}
+
+export async function saveSubmissionToFirestore(submissionItem: SubmissionItem): Promise<string> {
+  try {
+    await ensureAuthenticated();
+    const subRef = doc(db, 'submissions', submissionItem.id);
+    const cleanData = sanitizeForFirestore(submissionItem);
+    await setDoc(subRef, cleanData, { merge: true });
+    return submissionItem.id;
+  } catch (error) {
+    console.error('Error saving submission to Firestore:', error);
+    throw error;
+  }
+}
+
+export async function deleteSubmissionFromFirestore(subId: string): Promise<void> {
+  try {
+    await ensureAuthenticated();
+    await deleteDoc(doc(db, 'submissions', subId));
+  } catch (error) {
+    console.error('Error deleting submission from Firestore:', error);
     throw error;
   }
 }
