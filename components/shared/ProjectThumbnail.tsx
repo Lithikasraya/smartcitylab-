@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Sun, Radio, Eye } from 'lucide-react';
-import { getMediaDisplayUrl } from '@/lib/mediaService';
+import { getMediaDisplayUrl, getYouTubeEmbedUrl } from '@/lib/mediaService';
 
 interface ProjectThumbnailProps {
   imageUrl?: string;
@@ -22,10 +22,30 @@ export default function ProjectThumbnail({
   const [imgError, setImgError] = useState(false);
   const [videoError, setVideoError] = useState(false);
 
+  const ytEmbedUrl = getYouTubeEmbedUrl(videoUrl);
   const displayVideoUrl = getMediaDisplayUrl(videoUrl);
   const displayImageUrl = getMediaDisplayUrl(imageUrl);
 
-  // If a video is provided and hasn't errored, play looping video
+  // If a YouTube video is provided
+  if (ytEmbedUrl && !videoError) {
+    return (
+      <div className={`relative bg-slate-950 overflow-hidden ${className}`}>
+        <iframe
+          src={ytEmbedUrl}
+          title={title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="w-full h-full border-0 pointer-events-auto"
+        />
+        <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/70 text-white text-[11px] font-semibold flex items-center gap-1.5 backdrop-blur-sm border border-white/10 pointer-events-none">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          <span>VIDEO DEMO</span>
+        </div>
+      </div>
+    );
+  }
+
+  // If direct MP4/WebM video is provided and hasn't errored
   if (displayVideoUrl && !videoError) {
     return (
       <div className={`relative bg-slate-950 overflow-hidden ${className}`}>
@@ -35,10 +55,11 @@ export default function ProjectThumbnail({
           loop
           muted
           playsInline
+          controls
           onError={() => setVideoError(true)}
           className="w-full h-full object-cover"
         />
-        <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/70 text-white text-[11px] font-semibold flex items-center gap-1.5 backdrop-blur-sm border border-white/10">
+        <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/70 text-white text-[11px] font-semibold flex items-center gap-1.5 backdrop-blur-sm border border-white/10 pointer-events-none">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <span>LIVE DEMO</span>
         </div>

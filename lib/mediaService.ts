@@ -119,3 +119,15 @@ export function getMediaDisplayUrl(url?: string): string {
   return url;
 }
 
+/**
+ * Returns YouTube embed URL if input is a YouTube video link
+ */
+export function getYouTubeEmbedUrl(url?: string): string | null {
+  if (!url) return null;
+  const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&loop=1&playlist=${ytMatch[1]}&controls=0&modestbranding=1`;
+  }
+  return null;
+}
+

@@ -1,5 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+function getMimeType(filePath: string, defaultType = 'application/octet-stream'): string {
+  const ext = filePath.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'mp4': return 'video/mp4';
+    case 'webm': return 'video/webm';
+    case 'mov': return 'video/quicktime';
+    case 'mkv': return 'video/x-matroska';
+    case 'png': return 'image/png';
+    case 'jpg':
+    case 'jpeg': return 'image/jpeg';
+    case 'webp': return 'image/webp';
+    case 'gif': return 'image/gif';
+    case 'svg': return 'image/svg+xml';
+    case 'pdf': return 'application/pdf';
+    default: return defaultType;
+  }
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { path: string[] } }
@@ -20,26 +38,45 @@ export async function GET(
 
     const r2Endpoint = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/r2/buckets/${cfBucket}/objects/${objectPath}`;
 
+    const reqHeaders: Record<string, string> = {
+      Authorization: `Bearer ${cfToken}`,
+    };
+
+    const rangeHeader = req.headers.get('range');
+    if (rangeHeader) {
+      reqHeaders['Range'] = rangeHeader;
+    }
+
     const r2Response = await fetch(r2Endpoint, {
       method: 'GET',
-      headers: {
-        Authorization: `Bearer ${cfToken}`,
-      },
+      headers: reqHeaders,
     });
 
     if (!r2Response.ok) {
       return new NextResponse('Media not found in Cloudflare R2', { status: r2Response.status });
     }
 
-    const contentType = r2Response.headers.get('Content-Type') || 'application/octet-stream';
+    const rawContentType = r2Response.headers.get('Content-Type') || '';
+    const contentType = rawContentType && rawContentType !== 'application/octet-stream' && rawContentType !== 'binary/octet-stream'
+      ? rawContentType
+      : getMimeType(objectPath, rawContentType || 'application/octet-stream');
+
+    const responseHeaders = new Headers();
+    responseHeaders.set('Content-Type', contentType);
+    responseHeaders.set('Accept-Ranges', 'bytes');
+    responseHeaders.set('Cache-Control', 'public, max-age=31536000, immutable');
+
+    const contentRange = r2Response.headers.get('Content-Range');
+    if (contentRange) responseHeaders.set('Content-Range', contentRange);
+
+    const contentLength = r2Response.headers.get('Content-Length');
+    if (contentLength) responseHeaders.set('Content-Length', contentLength);
+
     const body = await r2Response.arrayBuffer();
 
     return new NextResponse(body, {
-      status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
+      status: r2Response.status === 206 ? 206 : 200,
+      headers: responseHeaders,
     });
   } catch (err: unknown) {
     const error = err as Error;

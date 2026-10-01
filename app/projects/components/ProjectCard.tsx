@@ -7,7 +7,7 @@ import { ProjectItem } from '@/lib/data';
 import { Github } from '@/components/shared/Icons';
 import { ExternalLink, ArrowRight, ShieldCheck, Video } from 'lucide-react';
 
-import { getMediaDisplayUrl } from '@/lib/mediaService';
+import { getMediaDisplayUrl, getYouTubeEmbedUrl } from '@/lib/mediaService';
 
 interface ProjectCardProps {
   project: ProjectItem;
@@ -48,9 +48,11 @@ export default function ProjectCard({ project, onSelect }: ProjectCardProps) {
   const accent = CATEGORY_ACCENT[project.category] ?? '#2563EB';
   const symbol = CATEGORY_SYMBOL[project.category] ?? '◈';
 
+  const ytEmbedUrl = getYouTubeEmbedUrl(project.videoUrl);
   const displayVideoUrl = getMediaDisplayUrl(project.videoUrl);
   const displayImageUrl = getMediaDisplayUrl(project.imageUrl);
 
+  const hasYtVideo = Boolean(ytEmbedUrl && !videoError);
   const hasVideo = Boolean(displayVideoUrl && !videoError);
   const hasImage = Boolean(displayImageUrl && !imgError);
 
@@ -63,7 +65,24 @@ export default function ProjectCard({ project, onSelect }: ProjectCardProps) {
     >
       {/* ── Media Header (Video / Image / Fallback) ── */}
       <div className="relative h-48 w-full bg-slate-950 overflow-hidden shrink-0">
-        {hasVideo ? (
+        {hasYtVideo ? (
+          <div className="relative w-full h-full">
+            <iframe
+              src={ytEmbedUrl!}
+              title={project.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              className="w-full h-full border-0 pointer-events-none"
+            />
+            <div className="absolute inset-0 bg-transparent pointer-events-none" />
+            <div className="absolute bottom-3 left-3 z-10">
+              <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
+                <Video className="w-3 h-3 text-red-400" />
+                VIDEO
+              </span>
+            </div>
+          </div>
+        ) : hasVideo ? (
           <div className="relative w-full h-full">
             <video
               src={displayVideoUrl}

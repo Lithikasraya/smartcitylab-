@@ -11,7 +11,7 @@ import MemberAvatar from '@/components/shared/MemberAvatar';
 import ProjectThumbnail from '@/components/shared/ProjectThumbnail';
 import { usePortalStore } from '@/lib/store';
 import { ProjectItem } from '@/lib/data';
-import { getMediaDisplayUrl } from '@/lib/mediaService';
+import { getMediaDisplayUrl, getYouTubeEmbedUrl } from '@/lib/mediaService';
 import {
   ArrowRight, ArrowUpRight, Zap, Shield, Globe, Cpu,
   Users, BookOpen, CheckCircle, Radio, Layers, Code2, Wifi,
@@ -180,9 +180,11 @@ function HomeProjectCard({ project, onSelect }: { project: ProjectItem; onSelect
   const Icon = cfg.icon;
   const members = project.members || [project.teamLead];
 
+  const ytEmbedUrl = getYouTubeEmbedUrl(project.videoUrl);
   const displayVideoUrl = getMediaDisplayUrl(project.videoUrl);
   const displayImageUrl = getMediaDisplayUrl(project.imageUrl);
 
+  const hasYtVideo = Boolean(ytEmbedUrl && !videoError);
   const hasVideo = Boolean(displayVideoUrl && !videoError);
   const hasImage = Boolean(displayImageUrl && !imgError);
 
@@ -193,7 +195,22 @@ function HomeProjectCard({ project, onSelect }: { project: ProjectItem; onSelect
       className="group bg-white rounded-2xl border border-gray-100 overflow-hidden card-shadow hover:card-shadow-hover hover:-translate-y-1.5 transition-all duration-200 cursor-pointer flex flex-col h-full text-left"
     >
       <div className="relative h-48 w-full bg-slate-950 overflow-hidden shrink-0">
-        {hasVideo ? (
+        {hasYtVideo ? (
+          <div className="relative w-full h-full">
+            <iframe
+              src={ytEmbedUrl!}
+              title={project.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              className="w-full h-full border-0 pointer-events-none"
+            />
+            <div className="absolute inset-0 bg-transparent pointer-events-none" />
+            <div className="absolute bottom-3 right-3 z-10">
+              <span className="flex items-center gap-1.5 text-[9px] font-bold text-white bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/15">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> VIDEO DEMO
+              </span>
+            </div>
+          </div>
+        ) : hasVideo ? (
           <div className="relative w-full h-full">
             <video
               src={displayVideoUrl}
