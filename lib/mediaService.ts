@@ -1,11 +1,6 @@
-import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from './firebase';
-
 /**
- * Universal media upload helper:
- * 1. Direct client-to-cloud upload to Firebase Storage (public CDN, instant rendering across all environments)
- * 2. Progress reporting for large media / videos
- * 3. Fast server upload fallback & client-side compression fallback
+ * Cloudflare R2 Media Upload Helper
+ * Handles images, PDFs, videos, and documents directly to Cloudflare R2
  */
 export async function uploadMediaFile(
   file: File | Blob,
@@ -15,52 +10,18 @@ export async function uploadMediaFile(
 ): Promise<string> {
   const originalName = file instanceof File ? file.name : 'media_file';
   const cleanName = (customFileName || originalName).replace(/[^a-zA-Z0-9._-]/g, '_');
-  const timestamp = Date.now();
-  const storagePath = `${folder}/${timestamp}_${cleanName}`;
-  const isVideo = file.type.startsWith('video/') || (file instanceof File && /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name));
 
-  // 1. Primary: Direct Client Firebase Storage upload (works everywhere, zero serverless proxy required)
-  if (storage) {
-    try {
-      const storageRef = ref(storage, storagePath);
-      const mimeType = file.type || (isVideo ? 'video/mp4' : 'image/jpeg');
-
-      if (onProgress) {
-        return await new Promise((resolve, reject) => {
-          const uploadTask = uploadBytesResumable(storageRef, file, { contentType: mimeType });
-
-          uploadTask.on(
-            'state_changed',
-            (snap) => {
-              const pct = snap.totalBytes > 0 ? Math.round((snap.bytesTransferred / snap.totalBytes) * 100) : 0;
-              onProgress(pct);
-            },
-            (err) => reject(err),
-            async () => {
-              const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve(downloadUrl);
-            }
-          );
-        });
-      } else {
-        const snapshot = await uploadBytes(storageRef, file, { contentType: mimeType });
-        const downloadUrl = await getDownloadURL(snapshot.ref);
-        if (downloadUrl) return downloadUrl;
-      }
-    } catch (directStorageErr) {
-      console.warn('Firebase Storage upload note, trying fallback:', directStorageErr);
-    }
-  }
-
-  // 2. Secondary fallback: Server-side Cloudflare R2 / upload endpoint
+  // 1. Primary: Direct upload to Cloudflare R2 endpoint (/api/upload)
   try {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('fileName', cleanName);
     formData.append('folder', folder);
 
+    if (onProgress) onProgress(30);
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
 
     const res = await fetch('/api/upload', {
       method: 'POST',
@@ -69,17 +30,20 @@ export async function uploadMediaFile(
     });
     clearTimeout(timeoutId);
 
+    if (onProgress) onProgress(80);
+
     if (res.ok) {
       const data = await res.json();
+      if (onProgress) onProgress(100);
       if (data.url) {
         return data.url;
       }
     }
-  } catch (serverErr) {
-    console.warn('Server upload fallback note:', serverErr);
+  } catch (cfErr) {
+    console.warn('Cloudflare R2 upload note:', cfErr);
   }
 
-  // 3. Fallback for images: Compress image to lightweight base64 Data URI
+  // 2. Client-side fallback for images: Base64 data URL
   if (file.type.startsWith('image/')) {
     try {
       return await compressImageToBase64(file);
@@ -88,7 +52,7 @@ export async function uploadMediaFile(
     }
   }
 
-  // Final fallback: standard FileReader data URL
+  // 3. Final fallback: standard FileReader data URL
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const cfBucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
     const cfPublicUrl = process.env.NEXT_PUBLIC_CLOUDFLARE_R2_PUBLIC_URL;
 
-    // If Cloudflare credentials are provided in env, upload to Cloudflare R2
+    // Upload directly to Cloudflare R2
     if (cfToken && cfAccountId && cfBucket) {
       const bytes = await file.arrayBuffer();
       const objectKey = `${folder}/${Date.now()}_${fileName.replace(/\s+/g, '_')}`;
@@ -33,7 +33,6 @@ export async function POST(req: NextRequest) {
       });
 
       if (cfResponse.ok) {
-        // Use custom public domain if configured (e.g. https://pub-xxx.r2.dev or custom CDN), otherwise serve via /api/media proxy
         const isPrivateS3Url = cfPublicUrl?.includes('r2.cloudflarestorage.com');
         const publicUrl = (cfPublicUrl && !isPrivateS3Url)
           ? `${cfPublicUrl.replace(/\/$/, '')}/${objectKey}`
@@ -45,20 +44,23 @@ export async function POST(req: NextRequest) {
           provider: 'cloudflare_r2',
           key: objectKey 
         });
+      } else {
+        const errorText = await cfResponse.text();
+        console.error('Cloudflare R2 API upload error:', errorText);
       }
     }
 
-    // Fallback: Return data URL / placeholder for local dev if Cloudflare credentials are not configured yet
+    // Secondary Fallback: Return data URL
     const bytes = await file.arrayBuffer();
     const base64 = Buffer.from(bytes).toString('base64');
-    const mimeType = file.type || 'image/jpeg';
+    const mimeType = file.type || 'application/octet-stream';
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
     return NextResponse.json({ 
       success: true, 
       url: dataUrl,
       provider: 'local_fallback',
-      message: 'Cloudflare credentials not set in .env.local, fallback data URL generated.'
+      message: 'Cloudflare upload fallback data URL generated.'
     });
 
   } catch (error: unknown) {

@@ -304,7 +304,7 @@ function StudentEditorContent() {
                   disabled={isUploadingPhoto}
                   icon={isUploadingPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
                 >
-                  {isUploadingPhoto ? 'Uploading to Firebase...' : photoUrl ? 'Change Photo' : 'Upload Student Photo'}
+                  {isUploadingPhoto ? 'Uploading to Cloudflare R2...' : photoUrl ? 'Change Photo' : 'Upload Student Photo'}
                 </Button>
                 {photoUrl && (
                   <button
