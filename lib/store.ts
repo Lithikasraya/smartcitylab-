@@ -69,17 +69,17 @@ const DEFAULT_USER: UserSession = {
 
 export function usePortalStore() {
   const [mounted, setMounted] = useState(false);
-  const [innovators, setInnovators] = useState<LabInnovator[]>([]);
-  const [projects, setProjects] = useState<ProjectItem[]>([]);
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [blogs, setBlogs] = useState<BlogItem[]>([]);
-  const [batches, setBatches] = useState<BatchMember[]>([]);
-  const [batchInfos, setBatchInfos] = useState<BatchInfo[]>([]);
-  const [gallery] = useState<GalleryItem[]>([]);
-  const [quests, setQuests] = useState<QuestItem[]>([]);
-  const [teams, setTeams] = useState<TeamItem[]>([]);
-  const [tasks, setTasks] = useState<TaskItem[]>([]);
-  const [submissions, setSubmissions] = useState<SubmissionItem[]>([]);
+  const [innovators, setInnovators] = useState<LabInnovator[]>(INITIAL_INNOVATORS);
+  const [projects, setProjects] = useState<ProjectItem[]>(INITIAL_PROJECTS);
+  const [news, setNews] = useState<NewsItem[]>(INITIAL_NEWS);
+  const [blogs, setBlogs] = useState<BlogItem[]>(INITIAL_BLOGS);
+  const [batches, setBatches] = useState<BatchMember[]>(INITIAL_BATCHES);
+  const [batchInfos, setBatchInfos] = useState<BatchInfo[]>(INITIAL_BATCH_INFOS);
+  const [gallery] = useState<GalleryItem[]>(INITIAL_GALLERY);
+  const [quests, setQuests] = useState<QuestItem[]>(INITIAL_QUESTS);
+  const [teams, setTeams] = useState<TeamItem[]>(INITIAL_TEAMS);
+  const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
+  const [submissions, setSubmissions] = useState<SubmissionItem[]>(INITIAL_SUBMISSIONS);
   const [user, setUser] = useState<UserSession>(DEFAULT_USER);
 
   useEffect(() => {

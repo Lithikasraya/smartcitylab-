@@ -9,7 +9,13 @@ import { ExternalLink } from 'lucide-react';
 export default function StudentTeamPage() {
   const { user, teams, tasks } = usePortalStore();
 
-  const currentTeam = teams.find((t) => t.id === user.teamId) || teams[0];
+  const currentTeam = teams.find((t) => t.id === user.teamId) || teams[0] || {
+    name: 'Unassigned',
+    colorTheme: 'blue',
+    teamLead: { name: 'Unknown' },
+    meetingLink: '',
+    members: []
+  };
   const teamTasks = tasks.filter((t) => t.teamName === currentTeam.name);
 
   return (

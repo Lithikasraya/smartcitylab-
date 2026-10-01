@@ -10,7 +10,11 @@ import { Video, ExternalLink } from 'lucide-react';
 export default function StudentDashboardPage() {
   const { user, tasks, teams } = usePortalStore();
 
-  const currentTeam = teams.find((t) => t.id === user.teamId) || teams[0];
+  const currentTeam = teams.find((t) => t.id === user.teamId) || teams[0] || {
+    name: 'Unassigned',
+    teamLead: { name: 'Unknown' },
+    meetingLink: ''
+  };
   const pendingTasks = tasks.filter((t) => t.status === 'pending');
 
   return (

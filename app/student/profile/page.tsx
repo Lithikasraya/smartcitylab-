@@ -14,7 +14,11 @@ export default function StudentProfilePage() {
   const [teamPush, setTeamPush] = useState(true);
   const [savedNotice, setSavedNotice] = useState(false);
 
-  const currentTeam = teams.find((t) => t.id === user.teamId) || teams[0];
+  const currentTeam = teams.find((t) => t.id === user.teamId) || teams[0] || {
+    name: 'Unassigned',
+    colorTheme: 'blue',
+    teamLead: { name: 'Unknown', email: 'unknown@kiet.edu' }
+  };
 
   const handleSaveNotifications = (e: React.FormEvent) => {
     e.preventDefault();
