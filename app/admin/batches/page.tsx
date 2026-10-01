@@ -9,6 +9,7 @@ import MemberAvatar from '@/components/shared/MemberAvatar';
 import { usePortalStore } from '@/lib/store';
 import { BatchInfo, BatchMember, LabInnovator } from '@/lib/data';
 import { parseExcelOrCsv, downloadSampleExcelTemplate, ParsedStudentRow } from '@/lib/excelHelper';
+import { uploadMediaFile } from '@/lib/mediaService';
 import { 
   Layers, 
   Users, 
@@ -19,15 +20,18 @@ import {
   CheckCircle2, 
   Calendar, 
   ShieldCheck, 
-  Sparkles,
-  FileSpreadsheet,
-  FileText,
-  Upload,
-  Download,
-  Check,
-  UserPlus,
-  Search,
-  BookOpen
+  Sparkles, 
+  FileSpreadsheet, 
+  FileText, 
+  Upload, 
+  Download, 
+  Check, 
+  UserPlus, 
+  Search, 
+  BookOpen,
+  Camera,
+  User,
+  Loader2
 } from 'lucide-react';
 
 export default function AdminBatchesPage() {
@@ -81,6 +85,23 @@ export default function AdminBatchesPage() {
   const [studentBranch, setStudentBranch] = useState('CSE');
   const [studentDomain, setStudentDomain] = useState('IoT & Embedded Systems');
   const [studentRole, setStudentRole] = useState<'Student' | 'Team Lead' | 'Mentor' | 'Faculty'>('Student');
+  const [studentPhotoUrl, setStudentPhotoUrl] = useState('');
+  const [isUploadingStudentPhoto, setIsUploadingStudentPhoto] = useState(false);
+  const studentPhotoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleStudentPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingStudentPhoto(true);
+    try {
+      const url = await uploadMediaFile(file, 'students/avatars');
+      setStudentPhotoUrl(url);
+    } catch (err: unknown) {
+      console.warn('Student photo upload note:', err);
+    } finally {
+      setIsUploadingStudentPhoto(false);
+    }
+  };
 
   // Assign Existing Students State
   const [existingSearchQuery, setExistingSearchQuery] = useState('');
@@ -185,12 +206,14 @@ export default function AdminBatchesPage() {
       domain: studentDomain,
       role: studentRole,
       isTeamLead: studentRole === 'Team Lead',
+      photoUrl: studentPhotoUrl || undefined,
     });
 
     setAddStudentModalOpen(false);
     setStudentName('');
     setStudentRoll('');
     setStudentEmail('');
+    setStudentPhotoUrl('');
     setStudentRole('Student');
     setNotification(`Enrolled student "${studentName}" into ${activeBatch?.name || 'Batch'}.`);
     setTimeout(() => setNotification(null), 4000);
@@ -1014,6 +1037,62 @@ export default function AdminBatchesPage() {
         maxWidth="xl"
       >
         <form onSubmit={handleAddStudentToBatch} className="space-y-4 text-left">
+          {/* Photo Upload Row */}
+          <div className="flex items-center gap-4 p-3 bg-white rounded-xl border border-slate-200">
+            <div className="relative w-14 h-14 rounded-full overflow-hidden bg-slate-100 border-2 border-blue-200 shrink-0 flex items-center justify-center">
+              {studentPhotoUrl ? (
+                <img src={studentPhotoUrl} alt="Student" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-7 h-7 text-slate-400" />
+              )}
+              {isUploadingStudentPhoto && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] font-semibold text-[#0A0A0A]">Student Photo</span>
+                {studentPhotoUrl && (
+                  <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.2 rounded border border-emerald-200">
+                    ✓ Uploaded
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-[#6B7280]">Upload student avatar for cohort roster</p>
+              <div className="pt-1 flex items-center gap-2">
+                <input
+                  type="file"
+                  ref={studentPhotoInputRef}
+                  onChange={handleStudentPhotoUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => studentPhotoInputRef.current?.click()}
+                  disabled={isUploadingStudentPhoto}
+                  icon={isUploadingStudentPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                >
+                  {isUploadingStudentPhoto ? 'Uploading...' : studentPhotoUrl ? 'Change' : 'Upload Photo'}
+                </Button>
+                {studentPhotoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setStudentPhotoUrl('')}
+                    className="text-[11px] text-red-500 hover:text-red-700 font-semibold"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Full Name"

@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, CheckCircle2 } from 'lucide-react';
+import { X, CheckCircle2, Upload } from 'lucide-react';
 import { usePortalStore } from '@/lib/store';
+import { uploadMediaFile } from '@/lib/mediaService';
 import Button from './Button';
 import { Input, Textarea } from './Input';
 
@@ -17,6 +18,8 @@ export default function QuickSubmitModal({ isOpen, onClose }: QuickSubmitModalPr
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
   const [category, setCategory] = useState('IoT & Sensors');
+  const [imageUrl, setImageUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const [repoUrl, setRepoUrl] = useState('');
   const [demoUrl, setDemoUrl] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -56,8 +59,9 @@ export default function QuickSubmitModal({ isOpen, onClose }: QuickSubmitModalPr
         teamName: user.teamName || 'Team CyberVision',
         details: {
           category,
-          repoUrl,
-          demoUrl,
+          imageUrl: imageUrl || undefined,
+          repoUrl: repoUrl || undefined,
+          demoUrl: demoUrl || undefined,
           submittedVia: 'Quick Submit Action',
         },
       });
@@ -179,6 +183,48 @@ export default function QuickSubmitModal({ isOpen, onClose }: QuickSubmitModalPr
                     <option value="Web & Cloud">Web & Cloud</option>
                   </select>
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-[14px] font-medium text-[#0A0A0A]">Project Cover Image</label>
+                  <Input
+                    placeholder="Image URL or upload below..."
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                  />
+                  <div className="pt-1 flex items-center gap-2">
+                    <input
+                      type="file"
+                      id="quick-image-upload"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setIsUploading(true);
+                          try {
+                            const url = await uploadMediaFile(file, 'submissions/covers');
+                            setImageUrl(url);
+                          } catch (err) {
+                            console.warn('Upload error:', err);
+                          } finally {
+                            setIsUploading(false);
+                          }
+                        }
+                      }}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="quick-image-upload"
+                      className="px-3 py-1.5 rounded-lg border border-[#E5E7EB] text-[12px] font-medium text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#F8F9FA] cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{isUploading ? 'Uploading...' : imageUrl ? 'Replace Image' : 'Upload Image File'}</span>
+                    </label>
+                    {imageUrl && (
+                      <span className="text-[11px] text-emerald-600 font-semibold">✓ Image attached</span>
+                    )}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="GitHub Repository"

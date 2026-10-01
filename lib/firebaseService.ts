@@ -4,21 +4,17 @@ import {
   getDocs, 
   getDoc, 
   setDoc, 
-  addDoc, 
-  updateDoc, 
   deleteDoc, 
   query, 
-  where,
-  onSnapshot 
+  onSnapshot,
+  Unsubscribe 
 } from 'firebase/firestore';
 import { 
   signInWithEmailAndPassword, 
   signOut as firebaseSignOut,
-  onAuthStateChanged,
-  User as FirebaseUser 
 } from 'firebase/auth';
 import { auth, db } from './firebase';
-import { BatchMember, ProjectItem } from './data';
+import { BatchInfo, BatchMember, ProjectItem } from './data';
 import { UserSession } from './store';
 
 export interface FirestoreUserProfile {
@@ -31,6 +27,27 @@ export interface FirestoreUserProfile {
   teamName?: string;
   avatar?: string;
   createdAt?: string;
+}
+
+/**
+ * Strips undefined properties recursively so Firestore setDoc does not throw
+ * "Function setDoc() called with invalid data. Unsupported field value: undefined"
+ */
+export function sanitizeForFirestore<T extends Record<string, any>>(obj: T): T {
+  const clean: any = {};
+  for (const key of Object.keys(obj)) {
+    const val = obj[key];
+    if (val !== undefined) {
+      if (val !== null && typeof val === 'object' && !Array.isArray(val) && !(val instanceof Date)) {
+        clean[key] = sanitizeForFirestore(val);
+      } else if (Array.isArray(val)) {
+        clean[key] = val.map((item) => (item !== null && typeof item === 'object' ? sanitizeForFirestore(item) : item));
+      } else {
+        clean[key] = val;
+      }
+    }
+  }
+  return clean;
 }
 
 // ── Auth Services ────────────────────────────────────────────────────────────
@@ -61,11 +78,11 @@ export async function loginAdmin(email: string, pass: string): Promise<UserSessi
         rollNo: data.rollNo,
       };
     } else {
-      await setDoc(userDocRef, {
+      await setDoc(userDocRef, sanitizeForFirestore({
         uid,
         ...profile,
         createdAt: new Date().toISOString(),
-      });
+      }));
     }
   } catch (firestoreErr) {
     console.warn('Firestore profile note (check security rules):', firestoreErr);
@@ -94,10 +111,26 @@ export async function fetchStudentsFromFirestore(): Promise<BatchMember[]> {
   }
 }
 
+export function subscribeToStudents(callback: (students: BatchMember[]) => void): Unsubscribe {
+  const q = query(collection(db, 'students'));
+  return onSnapshot(q, (snap) => {
+    const students: BatchMember[] = [];
+    snap.forEach((d) => {
+      students.push({ id: d.id, ...d.data() } as BatchMember);
+    });
+    if (students.length > 0) {
+      callback(students);
+    }
+  }, (err) => {
+    console.warn('Students live snapshot note:', err);
+  });
+}
+
 export async function saveStudentToFirestore(student: BatchMember): Promise<string> {
   try {
     const studentRef = doc(db, 'students', student.id);
-    await setDoc(studentRef, student, { merge: true });
+    const cleanData = sanitizeForFirestore(student);
+    await setDoc(studentRef, cleanData, { merge: true });
     return student.id;
   } catch (error) {
     console.error('Error saving student to Firestore:', error);
@@ -130,10 +163,26 @@ export async function fetchProjectsFromFirestore(): Promise<ProjectItem[]> {
   }
 }
 
+export function subscribeToProjects(callback: (projects: ProjectItem[]) => void): Unsubscribe {
+  const q = query(collection(db, 'projects'));
+  return onSnapshot(q, (snap) => {
+    const projects: ProjectItem[] = [];
+    snap.forEach((d) => {
+      projects.push({ id: d.id, ...d.data() } as ProjectItem);
+    });
+    if (projects.length > 0) {
+      callback(projects);
+    }
+  }, (err) => {
+    console.warn('Projects live snapshot note:', err);
+  });
+}
+
 export async function saveProjectToFirestore(project: ProjectItem): Promise<string> {
   try {
     const projRef = doc(db, 'projects', project.id);
-    await setDoc(projRef, project, { merge: true });
+    const cleanData = sanitizeForFirestore(project);
+    await setDoc(projRef, cleanData, { merge: true });
     return project.id;
   } catch (error) {
     console.error('Error saving project to Firestore:', error);
@@ -150,3 +199,54 @@ export async function deleteProjectFromFirestore(projectId: string): Promise<voi
   }
 }
 
+// ── Batch Infos Firestore Service ───────────────────────────────────────────
+export async function fetchBatchesFromFirestore(): Promise<BatchInfo[]> {
+  try {
+    const q = query(collection(db, 'batches'));
+    const snap = await getDocs(q);
+    const batches: BatchInfo[] = [];
+    snap.forEach((d) => {
+      batches.push({ id: d.id, ...d.data() } as BatchInfo);
+    });
+    return batches;
+  } catch (error) {
+    console.error('Error fetching batches from Firestore:', error);
+    return [];
+  }
+}
+
+export function subscribeToBatches(callback: (batches: BatchInfo[]) => void): Unsubscribe {
+  const q = query(collection(db, 'batches'));
+  return onSnapshot(q, (snap) => {
+    const batches: BatchInfo[] = [];
+    snap.forEach((d) => {
+      batches.push({ id: d.id, ...d.data() } as BatchInfo);
+    });
+    if (batches.length > 0) {
+      callback(batches);
+    }
+  }, (err) => {
+    console.warn('Batches live snapshot note:', err);
+  });
+}
+
+export async function saveBatchToFirestore(batch: BatchInfo): Promise<string> {
+  try {
+    const batchRef = doc(db, 'batches', batch.id);
+    const cleanData = sanitizeForFirestore(batch);
+    await setDoc(batchRef, cleanData, { merge: true });
+    return batch.id;
+  } catch (error) {
+    console.error('Error saving batch to Firestore:', error);
+    throw error;
+  }
+}
+
+export async function deleteBatchFromFirestore(batchId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'batches', batchId));
+  } catch (error) {
+    console.error('Error deleting batch from Firestore:', error);
+    throw error;
+  }
+}

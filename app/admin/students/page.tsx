@@ -8,6 +8,7 @@ import Modal from '@/components/shared/Modal';
 import { usePortalStore } from '@/lib/store';
 import { BatchMember } from '@/lib/data';
 import { parseExcelOrCsv, downloadSampleExcelTemplate, ParsedStudentRow } from '@/lib/excelHelper';
+import { uploadMediaFile } from '@/lib/mediaService';
 import { 
   GraduationCap, 
   Users, 
@@ -32,13 +33,16 @@ import {
   Calendar,
   Layers,
   Building2,
-  Lock
+  Lock,
+  Camera,
+  Image as ImageIcon,
+  Loader2
 } from 'lucide-react';
 
 export default function AdminStudentsCRMPage() {
   const { 
     batches, 
-    batchInfos,
+    batchInfos, 
     teams, 
     addStudentToCRM, 
     addStudentsBulk,
@@ -68,6 +72,13 @@ export default function AdminStudentsCRMPage() {
   const [isParsingExcel, setIsParsingExcel] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Photo Upload State
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isUploadingEditPhoto, setIsUploadingEditPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const editPhotoInputRef = useRef<HTMLInputElement>(null);
+
   // Fallback batches if custom batchInfos haven't been created yet
   const availableBatches = batchInfos.length > 0
     ? batchInfos.map((b) => ({ value: b.year, label: `${b.name} (${b.academicSession || b.year})` }))
@@ -88,6 +99,29 @@ export default function AdminStudentsCRMPage() {
   const [teamName, setTeamName] = useState('Unassigned');
   const [studentRole, setStudentRole] = useState<'Student' | 'Team Lead' | 'Mentor' | 'Faculty'>('Student');
   const [domain, setDomain] = useState('IoT & Embedded Systems');
+
+  // Photo upload handler
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (isEdit) setIsUploadingEditPhoto(true);
+    else setIsUploadingPhoto(true);
+
+    try {
+      const url = await uploadMediaFile(file, 'students/avatars');
+      if (isEdit && editingStudent) {
+        setEditingStudent({ ...editingStudent, photoUrl: url });
+      } else {
+        setPhotoUrl(url);
+      }
+    } catch (err: unknown) {
+      console.warn('Photo upload note:', err);
+    } finally {
+      if (isEdit) setIsUploadingEditPhoto(false);
+      else setIsUploadingPhoto(false);
+    }
+  };
 
   // Filter students
   const filteredStudents = batches.filter((s) => {
@@ -146,6 +180,7 @@ export default function AdminStudentsCRMPage() {
       domain,
       role: studentRole,
       isTeamLead: isLead,
+      photoUrl: photoUrl || undefined,
       tempPassword: tempPass,
       passwordResetRequired: true,
     });
@@ -155,6 +190,7 @@ export default function AdminStudentsCRMPage() {
     setName('');
     setRollNo('');
     setEmail('');
+    setPhotoUrl('');
     setStudentRole('Student');
     setTeamName('Unassigned');
 
@@ -224,6 +260,7 @@ export default function AdminStudentsCRMPage() {
       domain: editingStudent.domain,
       role: editingStudent.role || (editingStudent.isTeamLead ? 'Team Lead' : 'Student'),
       isTeamLead: editingStudent.role === 'Team Lead' || !!editingStudent.isTeamLead,
+      photoUrl: editingStudent.photoUrl,
     });
     setEditingStudent(null);
     setBannerNotice(`Details for ${editingStudent.name} updated.`);
@@ -565,13 +602,71 @@ export default function AdminStudentsCRMPage() {
       >
         <form onSubmit={handleCreateStudent} className="space-y-5 text-left">
           
-          {/* Section 1: Student Identity */}
+          {/* Section 1: Student Identity & Photo */}
           <div className="bg-slate-50/70 border border-slate-200/70 rounded-2xl p-4 sm:p-5 space-y-4">
             <div className="flex items-center gap-2 pb-1 border-b border-slate-200/60">
               <span className="w-6 h-6 rounded-lg bg-blue-100/80 text-blue-700 flex items-center justify-center text-[12px] font-bold">1</span>
               <h4 className="text-[13px] font-bold uppercase tracking-wider text-slate-700">
                 Personal & Academic Identity
               </h4>
+            </div>
+
+            {/* Photo Upload Row */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 p-3 bg-white rounded-xl border border-slate-200">
+              <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-100 border-2 border-blue-200 shrink-0 flex items-center justify-center">
+                {photoUrl ? (
+                  <img src={photoUrl} alt="Student Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-8 h-8 text-slate-400" />
+                )}
+                {isUploadingPhoto && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 text-center sm:text-left space-y-1">
+                <div className="flex items-center justify-center sm:justify-start gap-2">
+                  <span className="text-[13px] font-semibold text-slate-900">Student Profile Photo</span>
+                  {photoUrl && (
+                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      ✓ Photo Uploaded
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Upload portrait photo (PNG, JPG, WebP) for student ID & team roster cards.
+                </p>
+                <div className="pt-1 flex items-center justify-center sm:justify-start gap-2">
+                  <input
+                    type="file"
+                    ref={photoInputRef}
+                    onChange={(e) => handlePhotoUpload(e, false)}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={isUploadingPhoto}
+                    icon={isUploadingPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                  >
+                    {isUploadingPhoto ? 'Uploading...' : photoUrl ? 'Change Photo' : 'Upload Student Photo'}
+                  </Button>
+                  {photoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setPhotoUrl('')}
+                      className="text-[11px] text-red-500 hover:text-red-700 font-semibold"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -1058,13 +1153,64 @@ export default function AdminStudentsCRMPage() {
         >
           <form onSubmit={handleSaveEdit} className="space-y-5 text-left">
             
-            {/* Section 1: Student Identity */}
+            {/* Section 1: Student Identity & Photo */}
             <div className="bg-slate-50/70 border border-slate-200/70 rounded-2xl p-4 sm:p-5 space-y-4">
               <div className="flex items-center gap-2 pb-1 border-b border-slate-200/60">
                 <span className="w-6 h-6 rounded-lg bg-blue-100/80 text-blue-700 flex items-center justify-center text-[12px] font-bold">1</span>
                 <h4 className="text-[13px] font-bold uppercase tracking-wider text-slate-700">
-                  Student Identity
+                  Student Identity & Profile Photo
                 </h4>
+              </div>
+
+              {/* Photo Upload Row */}
+              <div className="flex flex-col sm:flex-row items-center gap-4 p-3 bg-white rounded-xl border border-slate-200">
+                <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-100 border-2 border-blue-200 shrink-0 flex items-center justify-center">
+                  {editingStudent.photoUrl ? (
+                    <img src={editingStudent.photoUrl} alt="Student Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-8 h-8 text-slate-400" />
+                  )}
+                  {isUploadingEditPhoto && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 text-white animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 text-center sm:text-left space-y-1">
+                  <span className="text-[13px] font-semibold text-slate-900 block">Student Profile Photo</span>
+                  <p className="text-[11px] text-slate-500">
+                    Update student portrait photo for cards and team rosters.
+                  </p>
+                  <div className="pt-1 flex items-center justify-center sm:justify-start gap-2">
+                    <input
+                      type="file"
+                      ref={editPhotoInputRef}
+                      onChange={(e) => handlePhotoUpload(e, true)}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => editPhotoInputRef.current?.click()}
+                      disabled={isUploadingEditPhoto}
+                      icon={isUploadingEditPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                    >
+                      {isUploadingEditPhoto ? 'Uploading...' : editingStudent.photoUrl ? 'Change Photo' : 'Upload Photo'}
+                    </Button>
+                    {editingStudent.photoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingStudent({ ...editingStudent, photoUrl: undefined })}
+                        className="text-[11px] text-red-500 hover:text-red-700 font-semibold"
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

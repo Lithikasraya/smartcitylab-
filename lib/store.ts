@@ -30,9 +30,15 @@ import {
   saveStudentToFirestore, 
   deleteStudentFromFirestore,
   fetchStudentsFromFirestore,
+  subscribeToStudents,
   fetchProjectsFromFirestore,
+  subscribeToProjects,
   saveProjectToFirestore,
-  deleteProjectFromFirestore
+  deleteProjectFromFirestore,
+  fetchBatchesFromFirestore,
+  subscribeToBatches,
+  saveBatchToFirestore,
+  deleteBatchFromFirestore
 } from './firebaseService';
 
 export interface UserSession {
@@ -115,21 +121,34 @@ export function usePortalStore() {
       const u = localStorage.getItem(STORAGE_KEYS.USER);
       if (u) setUser(JSON.parse(u));
 
-      // Fetch live real data from Firestore
+      // Fetch live real data from Firestore and subscribe in real-time
       if (isFirebaseConfigured) {
-        fetchStudentsFromFirestore().then((firestoreStudents) => {
+        const unsubStudents = subscribeToStudents((firestoreStudents) => {
           if (firestoreStudents && firestoreStudents.length > 0) {
             setBatches(firestoreStudents);
             saveItem(STORAGE_KEYS.BATCHES, firestoreStudents);
           }
-        }).catch((e) => console.warn('Firestore students fetch:', e));
+        });
 
-        fetchProjectsFromFirestore().then((firestoreProjects) => {
+        const unsubProjects = subscribeToProjects((firestoreProjects) => {
           if (firestoreProjects && firestoreProjects.length > 0) {
             setProjects(firestoreProjects);
             saveItem(STORAGE_KEYS.PROJECTS, firestoreProjects);
           }
-        }).catch((e) => console.warn('Firestore projects fetch:', e));
+        });
+
+        const unsubBatches = subscribeToBatches((firestoreBatches) => {
+          if (firestoreBatches && firestoreBatches.length > 0) {
+            setBatchInfos(firestoreBatches);
+            saveItem(STORAGE_KEYS.BATCH_INFOS, firestoreBatches);
+          }
+        });
+
+        return () => {
+          unsubStudents();
+          unsubProjects();
+          unsubBatches();
+        };
       }
     } catch {
       // fallback
@@ -814,6 +833,9 @@ export function usePortalStore() {
     const updated = [newBatch, ...batchInfos];
     setBatchInfos(updated);
     saveItem(STORAGE_KEYS.BATCH_INFOS, updated);
+    if (isFirebaseConfigured) {
+      saveBatchToFirestore(newBatch).catch((e) => console.warn('Firestore batch save note:', e));
+    }
     return newBatch;
   };
 
@@ -821,12 +843,19 @@ export function usePortalStore() {
     const updated = batchInfos.map((b) => (b.id === id ? { ...b, ...patch } : b));
     setBatchInfos(updated);
     saveItem(STORAGE_KEYS.BATCH_INFOS, updated);
+    const target = updated.find((b) => b.id === id);
+    if (target && isFirebaseConfigured) {
+      saveBatchToFirestore(target).catch((e) => console.warn('Firestore batch update note:', e));
+    }
   };
 
   const deleteBatch = (id: string) => {
     const updated = batchInfos.filter((b) => b.id !== id);
     setBatchInfos(updated);
     saveItem(STORAGE_KEYS.BATCH_INFOS, updated);
+    if (isFirebaseConfigured) {
+      deleteBatchFromFirestore(id).catch((e) => console.warn('Firestore batch delete note:', e));
+    }
   };
 
   const addFaculty = (facultyData: Omit<LabInnovator, 'id'>) => {
