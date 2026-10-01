@@ -2,11 +2,15 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: 'SMT - Student Project Management',
-  description: 'Submit, manage, and showcase student projects.',
+  title: 'KIET Smart City Lab | Innovation, Research & Project Showcase',
+  description: 'The premier student research & project incubation platform for smart urban infrastructure, IoT, AI, and green energy at KIET Group of Institutions.',
 };
 
 export default function RootLayout({
@@ -15,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.className} bg-neutral-950 text-white min-h-screen`}>
+    <html lang="en" className={inter.variable}>
+      <body className="min-h-screen bg-[#FAFCFF] text-slate-900 font-sans antialiased selection:bg-blue-500 selection:text-white">
         {children}
       </body>
     </html>
