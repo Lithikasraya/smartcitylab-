@@ -351,36 +351,49 @@ export function usePortalStore() {
     }
   };
 
-  const switchUser = (role: 'super_admin' | 'team_lead' | 'student') => {
-    let nextUser: UserSession = DEFAULT_USER;
-    if (role === 'super_admin') {
-      nextUser = {
-        role: 'super_admin',
-        name: 'Dr. Vivek Upadhyay',
-        email: 'director.smartcity@kiet.edu',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80',
-      };
-    } else if (role === 'team_lead') {
-      nextUser = {
-        role: 'team_lead',
-        name: 'Aarav Sharma',
-        email: 'aarav.sharma@kiet.edu',
-        rollNo: '2200290100012',
-        teamId: 'team-1',
-        teamName: 'Team CyberVision',
-        teamColor: 'blue',
-        avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
-      };
+  const switchUser = (newUser: UserSession | 'super_admin' | 'team_lead' | 'student') => {
+    if (typeof newUser === 'string') {
+      let u: UserSession;
+      if (newUser === 'super_admin') {
+        u = {
+          role: 'super_admin',
+          name: 'Dr. Vivek Upadhyay',
+          email: 'director.smartcity@kiet.edu',
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80',
+        };
+      } else if (newUser === 'team_lead') {
+        u = {
+          role: 'team_lead',
+          name: 'Aarav Sharma',
+          email: 'aarav.sharma@kiet.edu',
+          rollNo: '2200290100012',
+          teamId: 'team-1',
+          teamName: 'Team CyberVision',
+          teamColor: 'blue',
+          avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
+        };
+      } else {
+        u = {
+          role: 'student',
+          name: 'Priya Patel',
+          email: 'priya.patel@kiet.edu',
+          rollNo: '2200290100045',
+        };
+      }
+      setUser(u);
+      saveItem(STORAGE_KEYS.USER, u);
     } else {
-      nextUser = DEFAULT_USER;
+      setUser(newUser);
+      saveItem(STORAGE_KEYS.USER, newUser);
     }
-    setUser(nextUser);
-    saveItem(STORAGE_KEYS.USER, nextUser);
   };
 
-  const updateUser = (nextUser: UserSession) => {
-    setUser(nextUser);
-    saveItem(STORAGE_KEYS.USER, nextUser);
+  const updateUser = (u: UserSession | ((prev: UserSession) => UserSession)) => {
+    setUser((prev) => {
+      const nextUser = typeof u === 'function' ? u(prev) : u;
+      saveItem(STORAGE_KEYS.USER, nextUser);
+      return nextUser;
+    });
   };
 
   // Interns Management Actions for Admin CRM
@@ -441,24 +454,27 @@ export function usePortalStore() {
     }
 
     if (sub.type === 'project') {
+      const details = (sub.details || {}) as Record<string, any>;
       const newProj: ProjectItem = {
         id: `proj-${Date.now()}`,
         title: sub.title,
-        tagline: sub.summary,
-        description: (sub.details?.description as string) || sub.summary,
-        category: (sub.details?.category as ProjectItem['category']) || 'AI & Computer Vision',
-        batchYear: '2026',
-        teamName: sub.teamName,
-        teamLead: 'Aarav Sharma',
-        members: [sub.studentName],
-        imageUrl: (sub.details?.imageUrl as string) || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
-        demoUrl: sub.details?.demoUrl as string,
-        repoUrl: sub.details?.repoUrl as string,
+        tagline: (details.tagline as string) || sub.summary,
+        description: (details.description as string) || sub.summary,
+        category: (details.category as ProjectItem['category']) || 'IoT & Sensors',
+        batchYear: (details.batchYear as ProjectItem['batchYear']) || '2026',
+        teamName: sub.teamName || (details.teamName as string) || 'Smart City Lab Team',
+        teamLead: (details.teamLead as string) || sub.studentName,
+        members: Array.isArray(details.members) && details.members.length > 0 ? details.members : [sub.studentName],
+        imageUrl: (details.imageUrl as string) || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
+        videoUrl: (details.videoUrl as string) || undefined,
+        demoUrl: (details.demoUrl as string) || undefined,
+        repoUrl: (details.repoUrl as string) || undefined,
         status: 'approved',
         views: 1,
         featured: true,
+        isVisible: true,
         publishedAt: new Date().toISOString().split('T')[0],
-        techStack: (sub.details?.techStack as string[]) || ['IoT', 'Next.js'],
+        techStack: Array.isArray(details.techStack) && details.techStack.length > 0 ? details.techStack : ['IoT', 'Embedded Systems'],
       };
       const updatedProjects = [newProj, ...projects];
       setProjects(updatedProjects);

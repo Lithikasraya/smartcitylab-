@@ -115,7 +115,25 @@ export default function AdminProjectsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <Link href="/proposal" target="_blank" rel="noopener noreferrer">
+            <Button
+              variant="outline"
+              size="md"
+              icon={<ExternalLink className="w-4 h-4" />}
+            >
+              Public Proposal Form
+            </Button>
+          </Link>
+          <Link href="/admin/approvals">
+            <Button
+              variant="outline"
+              size="md"
+              icon={<CheckCircle2 className="w-4 h-4" />}
+            >
+              Review Proposals
+            </Button>
+          </Link>
           <Link href="/admin/projects/new">
             <Button
               variant="primary"
