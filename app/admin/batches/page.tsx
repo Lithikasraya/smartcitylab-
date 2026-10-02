@@ -54,7 +54,7 @@ export default function AdminBatchesPage() {
   } = usePortalStore();
 
   const [activeMainTab, setActiveMainTab] = useState<'cohorts' | 'faculty'>('cohorts');
-  const [selectedBatchYear, setSelectedBatchYear] = useState<string>('2026');
+  const [selectedBatchYear, setSelectedBatchYear] = useState<string>(batchInfos[0]?.year || 'Cream Layer I');
   
   // Modals state
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -423,9 +423,9 @@ export default function AdminBatchesPage() {
               </div>
               <div>
                 <div className="text-[24px] font-bold text-[#0A0A0A]">
-                  {batches.filter((b) => b.batchYear === '2026').length}
+                  {batches.filter((b) => b.status === 'active').length}
                 </div>
-                <div className="text-[13px] text-[#6B7280]">Batch 2026 Interns</div>
+                <div className="text-[13px] text-[#6B7280]">Active Research Interns</div>
               </div>
             </Card>
 

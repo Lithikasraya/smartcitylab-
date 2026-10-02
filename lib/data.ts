@@ -13,7 +13,7 @@ export interface ProjectItem {
   tagline: string;
   description: string;
   category: 'IoT & Sensors' | 'AI & Computer Vision' | 'Smart Mobility' | 'Green Energy' | 'Web & Cloud';
-  batchYear: '2024' | '2025' | '2026';
+  batchYear: string;
   teamName: string;
   teamLead: string;
   members: string[];
@@ -193,7 +193,36 @@ export interface SubmissionItem {
 
 // ── Clean empty initial states (No mock/fake data) ──
 export const INITIAL_INNOVATORS: LabInnovator[] = [];
-export const INITIAL_BATCH_INFOS: BatchInfo[] = [];
+// ── Cohorts & Batches ──
+export const INITIAL_BATCH_INFOS: BatchInfo[] = [
+  {
+    id: 'cream-layer-1',
+    name: 'CREAM LAYER – I',
+    year: 'Cream Layer I',
+    academicSession: 'CORE GROUP (10 INTERNS)',
+    status: 'active',
+    mentorLead: 'Core Research Faculty',
+    description: 'Elite Core Group driving core lab architecture, high-level research prototypes, and system integrations.',
+  },
+  {
+    id: 'cream-layer-2',
+    name: 'CREAM LAYER – II',
+    year: 'Cream Layer II',
+    academicSession: '4TH YEARS (06 INTERNS)',
+    status: 'active',
+    mentorLead: 'Senior Project Mentors',
+    description: 'Final year senior research interns leading hardware deployments, testing protocols, and mentorship.',
+  },
+  {
+    id: 'cream-layer-3',
+    name: 'CREAM LAYER – III',
+    year: 'Cream Layer III',
+    academicSession: '3RD YEARS (13 INTERNS)',
+    status: 'active',
+    mentorLead: 'IoT & Edge AI Mentors',
+    description: 'Pre-final year research interns focusing on sensor grids, edge AI pipelines, and embedded software.',
+  },
+];
 export const INITIAL_BATCHES: BatchMember[] = [];
 export const INITIAL_PROJECTS: ProjectItem[] = [];
 export const INITIAL_NEWS: NewsItem[] = [];

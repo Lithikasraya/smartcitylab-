@@ -41,7 +41,7 @@ const PRESET_TECH = [
 ];
 
 export default function PublicProposalPage() {
-  const { batches, switchUser, addQuickSubmission } = usePortalStore();
+  const { batches, batchInfos, switchUser, addQuickSubmission } = usePortalStore();
 
   // Student Profile Selection State ("Who are you?")
   const [searchStudentQuery, setSearchStudentQuery] = useState('');
@@ -52,7 +52,7 @@ export default function PublicProposalPage() {
   const [title, setTitle] = useState('');
   const [tagline, setTagline] = useState('');
   const [category, setCategory] = useState('IoT & Sensors');
-  const [batchYear, setBatchYear] = useState('2026');
+  const [batchYear, setBatchYear] = useState('Cream Layer I');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
   const [teamName, setTeamName] = useState('');
@@ -871,15 +871,25 @@ export default function PublicProposalPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block text-[12px] font-semibold text-slate-700">Batch Year</label>
+                        <label className="block text-[12px] font-semibold text-slate-700">Lab Cohort / Cream Layer</label>
                         <select
                           value={batchYear}
                           onChange={(e) => setBatchYear(e.target.value)}
                           className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[12px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 font-medium"
                         >
-                          <option value="2026">Batch 2026</option>
-                          <option value="2025">Batch 2025</option>
-                          <option value="2024">Batch 2024</option>
+                          {batchInfos && batchInfos.length > 0 ? (
+                            batchInfos.map((b) => (
+                              <option key={b.id} value={b.year}>
+                                {b.name} ({b.academicSession || b.year})
+                              </option>
+                            ))
+                          ) : (
+                            <>
+                              <option value="Cream Layer I">CREAM LAYER – I (CORE GROUP)</option>
+                              <option value="Cream Layer II">CREAM LAYER – II (4TH YEARS)</option>
+                              <option value="Cream Layer III">CREAM LAYER – III (3RD YEARS)</option>
+                            </>
+                          )}
                         </select>
                       </div>
 

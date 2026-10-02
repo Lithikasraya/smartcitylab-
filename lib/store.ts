@@ -136,7 +136,12 @@ export function usePortalStore() {
       const bt = safeParse(localStorage.getItem(STORAGE_KEYS.BATCHES));
       if (bt) setBatches(bt);
       const bi = safeParse(localStorage.getItem(STORAGE_KEYS.BATCH_INFOS));
-      if (bi) setBatchInfos(bi);
+      if (bi && Array.isArray(bi) && bi.length > 0 && bi.some((b: any) => b.name?.includes('CREAM LAYER') || b.year?.includes('Cream Layer'))) {
+        setBatchInfos(bi);
+      } else {
+        setBatchInfos(INITIAL_BATCH_INFOS);
+        saveItem(STORAGE_KEYS.BATCH_INFOS, INITIAL_BATCH_INFOS);
+      }
       const q = safeParse(localStorage.getItem(STORAGE_KEYS.QUESTS));
       if (q) setQuests(q);
       const t = safeParse(localStorage.getItem(STORAGE_KEYS.TEAMS));

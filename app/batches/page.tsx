@@ -13,7 +13,7 @@ export default function BatchesPage() {
   const { batches, innovators, batchInfos } = usePortalStore();
   
   // Set default tab to the first active batch or first batch available
-  const defaultTab = batchInfos.find(b => b.status === 'active')?.year || batchInfos[0]?.year || '2026';
+  const defaultTab = batchInfos.find(b => b.status === 'active')?.year || batchInfos[0]?.year || 'Cream Layer I';
   const [selectedTab, setSelectedTab] = useState<string>(defaultTab);
   const [searchQuery, setSearchQuery] = useState('');
   const [domainFilter, setDomainFilter] = useState('all');

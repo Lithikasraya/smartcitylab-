@@ -400,17 +400,25 @@ function StudentEditorContent() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-[13px] font-semibold text-[#0A0A0A]">Cohort Batch Year *</label>
+              <label className="block text-[13px] font-semibold text-[#0A0A0A]">Lab Cohort / Cream Layer *</label>
               <select
                 value={batchYear}
                 onChange={(e) => setBatchYear(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[14px] text-[#0A0A0A] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-colors"
               >
-                {ACADEMIC_YEARS.map((y) => (
-                  <option key={y.value} value={y.value}>
-                    Batch {y.label}
-                  </option>
-                ))}
+                {batchInfos && batchInfos.length > 0 ? (
+                  batchInfos.map((b) => (
+                    <option key={b.id} value={b.year}>
+                      {b.name} ({b.academicSession || b.year})
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="Cream Layer I">CREAM LAYER – I (CORE GROUP)</option>
+                    <option value="Cream Layer II">CREAM LAYER – II (4TH YEARS)</option>
+                    <option value="Cream Layer III">CREAM LAYER – III (3RD YEARS)</option>
+                  </>
+                )}
               </select>
             </div>
           </div>
