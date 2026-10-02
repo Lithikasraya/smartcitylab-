@@ -60,7 +60,7 @@ export default function ProjectCard({ project, onSelect }: ProjectCardProps) {
     <motion.div
       whileHover={{ scale: 1.015, y: -4 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
-      className="group rounded-[20px] border border-[#E5E7EB] bg-white overflow-hidden flex flex-col h-full hover:shadow-[0_16px_48px_rgba(0,0,0,0.10)] hover:border-[#D1D5DB] transition-all duration-200 text-left cursor-pointer"
+      className="group rounded-[22px] border border-gray-200/80 bg-white overflow-hidden flex flex-col h-full shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.12),0_4px_12px_rgba(0,0,0,0.06)] hover:border-blue-400/40 transition-all duration-200 text-left cursor-pointer"
       onClick={() => onSelect(project)}
     >
       {/* ── Media Header (Video / Image / Fallback) ── */}

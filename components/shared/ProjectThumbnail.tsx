@@ -233,7 +233,6 @@ export default function ProjectThumbnail({
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover transition-transform duration-300 hover:scale-102"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
 
             {/* Photo Navigation arrows if multiple photos */}
             {allPhotos.length > 1 && (

@@ -12,7 +12,7 @@ interface GalleryCardProps {
 export default function GalleryCard({ item, onSelect }: GalleryCardProps) {
   return (
     <Card
-      className="p-0 overflow-hidden cursor-pointer hover:border-[#0A0A0A] transition-colors group flex flex-col justify-between"
+      className="p-0 overflow-hidden cursor-pointer rounded-2xl border border-gray-200/80 bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.12)] hover:border-blue-400/50 transition-all group flex flex-col justify-between"
       onClick={() => onSelect(item)}
     >
       <div className="h-60 w-full overflow-hidden bg-[#F8F9FA] relative">

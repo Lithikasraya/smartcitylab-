@@ -192,7 +192,7 @@ function HomeProjectCard({ project, onSelect }: { project: ProjectItem; onSelect
     <motion.div
       variants={fadeUp}
       onClick={onSelect}
-      className="group bg-white rounded-2xl border border-gray-100 overflow-hidden card-shadow hover:card-shadow-hover hover:-translate-y-1.5 transition-all duration-200 cursor-pointer flex flex-col h-full text-left"
+      className="group bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.12),0_4px_12px_rgba(0,0,0,0.06)] hover:border-blue-400/40 hover:-translate-y-1.5 transition-all duration-200 cursor-pointer flex flex-col h-full text-left"
     >
       <div className="relative h-48 w-full bg-slate-950 overflow-hidden shrink-0">
         {hasYtVideo ? (
