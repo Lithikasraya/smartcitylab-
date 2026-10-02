@@ -25,7 +25,8 @@ import {
   QuestItem, 
   TeamItem, 
   TaskItem, 
-  SubmissionItem 
+  SubmissionItem,
+  ContactSettings 
 } from './data';
 import { UserSession } from './store';
 
@@ -636,3 +637,39 @@ export async function deleteSubmissionFromFirestore(subId: string): Promise<void
     throw error;
   }
 }
+
+// ── Platform & Contact Settings Firestore Service ───────────────────────────
+export async function fetchSettingsFromFirestore(): Promise<ContactSettings | null> {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'platform'));
+    if (snap.exists()) {
+      return snap.data() as ContactSettings;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching settings from Firestore:', error);
+    return null;
+  }
+}
+
+export function subscribeToSettings(callback: (settings: ContactSettings) => void): Unsubscribe {
+  return onSnapshot(doc(db, 'settings', 'platform'), (snap) => {
+    if (snap.exists()) {
+      callback(snap.data() as ContactSettings);
+    }
+  }, (err) => {
+    console.warn('Settings live snapshot note:', err);
+  });
+}
+
+export async function saveSettingsToFirestore(settings: ContactSettings): Promise<void> {
+  try {
+    await ensureAuthenticated();
+    const clean = sanitizeForFirestore(settings);
+    await setDoc(doc(db, 'settings', 'platform'), clean, { merge: true });
+  } catch (error) {
+    console.error('Error saving settings to Firestore:', error);
+    throw error;
+  }
+}
+

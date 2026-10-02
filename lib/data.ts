@@ -266,10 +266,38 @@ export const INITIAL_BATCH_INFOS: BatchInfo[] = [
     year: 'Cream Layer III',
     academicSession: '3RD YEARS (13 INTERNS)',
     status: 'active',
-    mentorLead: 'IoT & Edge AI Mentors',
     description: 'Pre-final year research interns focusing on sensor grids, edge AI pipelines, and embedded software.',
   },
 ];
+
+export interface ContactSettings {
+  labName: string;
+  contactEmail: string;
+  supportEmail: string;
+  phone: string;
+  address: string;
+  labLocation?: string;
+  workingHours?: string;
+  githubUrl?: string;
+  twitterUrl?: string;
+  linkedinUrl?: string;
+  websiteUrl?: string;
+}
+
+export const INITIAL_CONTACT_SETTINGS: ContactSettings = {
+  labName: 'KIET Smart City Lab',
+  contactEmail: 'smartcitylab@kiet.edu',
+  supportEmail: 'smartcitylab@kiet.edu',
+  phone: '+91 (0120) 2762000',
+  address: 'KIET Group of Institutions, Delhi-NCR, Ghaziabad-Meerut Road, Ghaziabad 201206',
+  labLocation: 'Smart City Innovation Wing, 2nd Floor, KIET Campus',
+  workingHours: 'Mon - Fri: 9:00 AM - 5:30 PM',
+  githubUrl: 'https://github.com',
+  twitterUrl: 'https://twitter.com',
+  linkedinUrl: 'https://linkedin.com',
+  websiteUrl: 'https://kiet.edu',
+};
+
 export const INITIAL_BATCHES: BatchMember[] = [];
 export const INITIAL_PROJECTS: ProjectItem[] = [];
 export const INITIAL_NEWS: NewsItem[] = [];
@@ -279,3 +307,4 @@ export const INITIAL_TEAMS: TeamItem[] = [];
 export const INITIAL_TASKS: TaskItem[] = [];
 export const INITIAL_SUBMISSIONS: SubmissionItem[] = [];
 export const INITIAL_GALLERY: GalleryItem[] = [];
+

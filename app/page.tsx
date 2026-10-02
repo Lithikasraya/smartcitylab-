@@ -10,6 +10,8 @@ import Modal from '@/components/shared/Modal';
 import MemberAvatar from '@/components/shared/MemberAvatar';
 import ProjectThumbnail from '@/components/shared/ProjectThumbnail';
 import WhatWeBuildVisual from '@/components/shared/WhatWeBuildVisual';
+import StudentProjectSpotlight from '@/components/shared/StudentProjectSpotlight';
+import ResearchersLottie from '@/components/shared/ResearchersLottie';
 import { usePortalStore } from '@/lib/store';
 import { ProjectItem, INITIAL_INNOVATORS } from '@/lib/data';
 import { getMediaDisplayUrl, getYouTubeEmbedUrl } from '@/lib/mediaService';
@@ -296,7 +298,8 @@ function HomeProjectCard({ project, onSelect }: { project: ProjectItem; onSelect
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Home() {
-  const { projects, news, batches, teams, quests, innovators } = usePortalStore();
+  const { mounted, projects, news, batches, teams, quests, innovators, contactSettings } = usePortalStore();
+  const contactEmail = contactSettings?.contactEmail || 'smartcitylab@kiet.edu';
   const [activeModal, setActiveModal] = useState<ProjectItem | null>(null);
 
   // Real data computed from store
@@ -310,11 +313,20 @@ export default function Home() {
   const recentNews       = news.filter((n) => n.isVisible !== false && n.status === 'approved').slice(0, 3);
   const featuredStudents = batches.filter((s) => s.status === 'active').slice(0, 6);
 
-  // Only display leaders marked as Head / Core Innovators
-  const headInnovators = (innovators && innovators.length > 0 ? innovators : INITIAL_INNOVATORS).filter(
-    (f) => f.isHead === true || (f.isHead === undefined && !f.name.toLowerCase().includes('demo') && !f.name.toLowerCase().includes('abhishek'))
-  );
-  const displayInnovators = headInnovators.length > 0 ? headInnovators : INITIAL_INNOVATORS;
+  // Only display leaders explicitly marked as Head (hierarchically ordered: Chairman -> Directors -> Faculty)
+  const rawInnovators = innovators && innovators.length > 0 ? innovators : INITIAL_INNOVATORS;
+  const displayInnovators = rawInnovators
+    .filter(
+      (f) => f.isHead === true && !f.name?.toLowerCase().includes('abhishek') && !f.designation?.toLowerCase().includes('demo')
+    )
+    .sort((a, b) => {
+      const getRank = (name: string, des: string) => {
+        if (name.includes('Viswam') || des.toLowerCase().includes('chairman')) return 1;
+        if (des.toLowerCase().includes('director')) return 2;
+        return 3;
+      };
+      return getRank(a.name, a.designation) - getRank(b.name, b.designation);
+    });
 
   // Scroll animation refs
   const featRef  = useRef<HTMLDivElement>(null);
@@ -586,20 +598,25 @@ export default function Home() {
                 <Link href="/batches" className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold text-[14px] rounded-xl hover:bg-blue-700 shadow-[0_2px_8px_rgba(37,99,235,0.3)] transition-all">
                   Join the Lab <ArrowRight className="w-4 h-4" />
                 </Link>
-                <a href="mailto:smartcitylab@kiet.edu" className="flex items-center gap-2 px-5 py-2.5 border border-gray-200 text-gray-700 font-semibold text-[14px] rounded-xl hover:bg-gray-50 transition-all">
+                <a href={`mailto:${contactEmail}`} className="flex items-center gap-2 px-5 py-2.5 border border-gray-200 text-gray-700 font-semibold text-[14px] rounded-xl hover:bg-gray-50 transition-all">
                   Contact Us
                 </a>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 pt-10">
               {[
                 { bg: 'bg-blue-600', icon: Cpu,        num: String(approvedProjects.length) + '+', label: 'Projects Shipped',      dark: true },
-                { bg: 'bg-gray-900', icon: Users,      num: String(totalStudents) + '+',            label: 'Active Researchers',    dark: true },
+                { bg: 'bg-gray-900', icon: Users,      num: String(totalStudents) + '+',            label: 'Active Researchers',    dark: true, isResearchers: true },
                 { bg: 'bg-emerald-50 border border-emerald-100', icon: TrendingUp, num: String(liveDeployments), label: 'Live Deployments', dark: false },
                 { bg: 'bg-violet-50 border border-violet-100',   icon: Wifi,       num: '24/7',                  label: 'Active IoT Telemetry', dark: false },
               ].map((cell, i) => (
-                <div key={i} className={`${cell.bg} rounded-2xl p-6 flex flex-col gap-3 ${cell.dark ? 'shadow-lg' : ''}`}>
+                <div key={i} className={`${cell.bg} rounded-2xl p-6 flex flex-col justify-between min-h-[140px] relative ${cell.isResearchers ? 'overflow-visible' : 'overflow-hidden'} transition-all duration-300 hover:scale-[1.02] ${cell.dark ? 'shadow-lg' : ''}`}>
+                  {cell.isResearchers && (
+                    <div className="absolute -top-20 sm:-top-24 right-2 sm:right-5 pointer-events-none z-20">
+                      <ResearchersLottie size={112} />
+                    </div>
+                  )}
                   <cell.icon className={`w-6 h-6 ${cell.dark ? 'text-white/80' : 'text-gray-600'}`} />
                   <div>
                     <div className={`text-[34px] font-black tracking-tight ${cell.dark ? 'text-white' : 'text-gray-900'}`}>{cell.num}</div>
@@ -652,7 +669,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════════
           INNOVATORS & LEADERSHIP SHOWCASE (HEAD PEOPLE ONLY)
       ══════════════════════════════════════════════════════════════════ */}
-      {displayInnovators && displayInnovators.length > 0 && (
+      {(!mounted || (displayInnovators && displayInnovators.length > 0)) && (
         <section className="py-24 bg-white" ref={studRef}>
           <div className="max-w-7xl mx-auto px-5 sm:px-8">
             <div className="text-center mb-14">
@@ -667,51 +684,80 @@ export default function Home() {
               </p>
             </div>
 
-            <motion.div 
-              variants={stagger} 
-              initial="hidden" 
-              animate={studInView ? 'visible' : 'hidden'} 
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 max-w-5xl mx-auto items-start justify-center"
-            >
-              {displayInnovators.map((innovator) => (
-                <motion.div 
-                  key={innovator.id} 
-                  variants={fadeUp} 
-                  className="flex flex-col items-center text-center group cursor-pointer"
-                >
-                  <div className="w-full aspect-[4/5] sm:aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200/80 shadow-[0_4px_16px_rgba(0,0,0,0.06)] group-hover:shadow-[0_8px_24px_rgba(37,99,235,0.15)] group-hover:-translate-y-1 transition-all duration-300 relative flex items-center justify-center mb-3">
-                    {innovator.photoUrl ? (
-                      <img
-                        src={getMediaDisplayUrl(innovator.photoUrl)}
-                        alt={innovator.name}
-                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-700 flex flex-col items-center justify-center text-white p-3">
-                        <span className="text-[26px] font-black tracking-wider">
-                          {innovator.name
-                            .replace(/^(Mr\.|Ms\.|Dr\.)\s*/, '')
-                            .split(' ')
-                            .map((n: string) => n[0])
-                            .join('')
-                            .slice(0, 2)
-                            .toUpperCase()}
-                        </span>
-                        <span className="text-[10px] font-medium text-blue-100 mt-1 uppercase tracking-wider">
-                          {innovator.designation}
-                        </span>
-                      </div>
-                    )}
+            {!mounted ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 max-w-5xl mx-auto items-start justify-center">
+                {[1, 2, 3, 4, 5].map((idx) => (
+                  <div key={idx} className="flex flex-col items-center text-center animate-pulse">
+                    <div className="w-full aspect-[4/5] rounded-3xl bg-gray-200 mb-3 shadow-md" />
+                    <div className="w-3/4 h-4 bg-gray-200 rounded mb-1.5" />
+                    <div className="w-1/2 h-3 bg-gray-100 rounded" />
                   </div>
-                  <h3 className="font-bold text-[14px] sm:text-[15px] text-gray-900 leading-snug group-hover:text-blue-600 transition-colors">
-                    {innovator.name}
-                  </h3>
-                  <p className="text-[12px] text-gray-500 font-medium italic mt-0.5">
-                    {innovator.designation}
-                  </p>
-                </motion.div>
-              ))}
-            </motion.div>
+                ))}
+              </div>
+            ) : (
+              <motion.div 
+                variants={stagger} 
+                initial="hidden" 
+                animate={studInView ? 'visible' : 'hidden'} 
+                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 max-w-5xl mx-auto items-start justify-center"
+              >
+                {displayInnovators.map((innovator) => (
+                  <motion.div 
+                    key={innovator.id} 
+                    variants={fadeUp} 
+                    className="flex flex-col items-center text-center group cursor-pointer"
+                  >
+                    <div className="w-full aspect-[4/5] rounded-3xl overflow-hidden bg-white border-2 border-white ring-1 ring-slate-200/90 shadow-[0_12px_28px_-6px_rgba(0,0,0,0.1),0_4px_12px_-2px_rgba(0,0,0,0.05)] group-hover:shadow-[0_22px_45px_-10px_rgba(37,99,235,0.28),0_8px_20px_-4px_rgba(37,99,235,0.12)] group-hover:-translate-y-2 transition-all duration-300 relative flex items-center justify-center mb-3.5">
+                      {innovator.photoUrl ? (
+                        <img
+                          src={getMediaDisplayUrl(innovator.photoUrl)}
+                          alt={innovator.name}
+                          className="w-full h-full object-cover object-top group-hover:scale-108 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-600 via-indigo-600 to-slate-900 flex flex-col items-center justify-center text-white p-3">
+                          <span className="text-[26px] font-black tracking-wider">
+                            {innovator.name
+                              .replace(/^(Mr\.|Ms\.|Dr\.)\s*/, '')
+                              .split(' ')
+                              .map((n: string) => n[0])
+                              .join('')
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </span>
+                          <span className="text-[10px] font-medium text-blue-100 mt-1 uppercase tracking-wider">
+                            {innovator.designation}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Glass subtle gradient bottom overlay on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                    </div>
+
+                    <h3 className="font-bold text-[14.5px] sm:text-[15.5px] text-gray-900 leading-snug group-hover:text-blue-600 transition-colors">
+                      {innovator.name}
+                    </h3>
+                    <p className="text-[12px] text-blue-600 font-semibold mt-0.5">
+                      {innovator.designation}
+                    </p>
+                    {innovator.department && (
+                      <p className="text-[11px] text-gray-400 font-medium truncate max-w-[140px]">
+                        {innovator.department}
+                      </p>
+                    )}
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+
+            {/* Dynamic Student Builders & Live Projects Spotlight */}
+            <StudentProjectSpotlight
+              students={batches}
+              projects={approvedProjects}
+              onOpenProject={(proj) => setActiveModal(proj)}
+            />
+
           </div>
         </section>
       )}
@@ -740,7 +786,7 @@ export default function Home() {
             <Link href="/batches" className="flex items-center gap-2 px-7 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-[15px] rounded-xl shadow-[0_4px_16px_rgba(37,99,235,0.4)] transition-all">
               Apply Now <ArrowRight className="w-4 h-4" />
             </Link>
-            <a href="mailto:smartcitylab@kiet.edu" className="flex items-center gap-2 px-7 py-3.5 bg-white/8 hover:bg-white/12 text-white font-semibold text-[15px] rounded-xl border border-white/15 hover:border-white/25 transition-all">
+            <a href={`mailto:${contactEmail}`} className="flex items-center gap-2 px-7 py-3.5 bg-white/8 hover:bg-white/12 text-white font-semibold text-[15px] rounded-xl border border-white/15 hover:border-white/25 transition-all">
               Contact Us
             </a>
           </motion.div>

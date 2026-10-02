@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Mail } from 'lucide-react';
+import { usePortalStore } from '@/lib/store';
 
 const navLinks = [
   { name: 'Home', href: '/' },
@@ -16,6 +17,8 @@ const navLinks = [
 ];
 
 export default function Navbar() {
+  const { contactSettings } = usePortalStore();
+  const contactEmail = contactSettings?.contactEmail || 'smartcitylab@kiet.edu';
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -77,7 +80,7 @@ export default function Navbar() {
           {/* ── Contact Us CTA ── */}
           <div className="hidden md:flex items-center gap-2.5">
             <a
-              href="mailto:smartcitylab@kiet.edu"
+              href={`mailto:${contactEmail}`}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[13.5px] font-semibold rounded-lg shadow-[0_2px_8px_rgba(37,99,235,0.3)] hover:shadow-[0_4px_14px_rgba(37,99,235,0.4)] transition-all duration-200"
             >
               <Mail className="w-3.5 h-3.5" />
@@ -123,7 +126,7 @@ export default function Navbar() {
               ))}
               <div className="pt-3 pb-1 border-t border-gray-100 mt-2">
                 <a
-                  href="mailto:smartcitylab@kiet.edu"
+                  href={`mailto:${contactEmail}`}
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-center text-[14px] font-semibold text-white"
                 >

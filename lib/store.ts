@@ -13,6 +13,7 @@ import {
   TeamItem,
   TaskItem,
   SubmissionItem,
+  ContactSettings,
   INITIAL_INNOVATORS,
   INITIAL_PROJECTS,
   INITIAL_NEWS,
@@ -24,6 +25,7 @@ import {
   INITIAL_TEAMS,
   INITIAL_TASKS,
   INITIAL_SUBMISSIONS,
+  INITIAL_CONTACT_SETTINGS,
 } from './data';
 import { isFirebaseConfigured } from './firebase';
 import { 
@@ -56,7 +58,9 @@ import {
   deleteTaskFromFirestore,
   subscribeToSubmissions,
   saveSubmissionToFirestore,
-  deleteSubmissionFromFirestore
+  deleteSubmissionFromFirestore,
+  subscribeToSettings,
+  saveSettingsToFirestore
 } from './firebaseService';
 
 export interface UserSession {
@@ -82,8 +86,35 @@ const STORAGE_KEYS = {
   TEAMS: 'smt_teams_v2',
   TASKS: 'smt_tasks_v2',
   SUBMISSIONS: 'smt_submissions_v2',
+  SETTINGS: 'smt_settings_v2',
   USER: 'smt_user_v2',
 };
+
+const TOMBSTONES_KEY = 'smt_tombstones_v2';
+
+function getTombstones(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = localStorage.getItem(TOMBSTONES_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function addTombstone(id: string) {
+  if (typeof window === 'undefined' || !id) return;
+  try {
+    const set = getTombstones();
+    set.add(id);
+    localStorage.setItem(TOMBSTONES_KEY, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
+function isTombstoned(id: string): boolean {
+  if (typeof window === 'undefined' || !id) return false;
+  return getTombstones().has(id);
+}
 
 const DEFAULT_USER: UserSession = {
   role: 'super_admin',
@@ -104,6 +135,7 @@ export function usePortalStore() {
   const [teams, setTeams] = useState<TeamItem[]>(INITIAL_TEAMS);
   const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
   const [submissions, setSubmissions] = useState<SubmissionItem[]>(INITIAL_SUBMISSIONS);
+  const [contactSettings, setContactSettings] = useState<ContactSettings>(INITIAL_CONTACT_SETTINGS);
   const [user, setUser] = useState<UserSession>(DEFAULT_USER);
 
   useEffect(() => {
@@ -116,6 +148,10 @@ export function usePortalStore() {
         }
       });
 
+      // Automatically tombstone old demo IDs if present
+      addTombstone('fac-demo');
+      addTombstone('innovator-demo');
+
       const safeParse = (str: string | null) => {
         if (!str || str === 'undefined' || str === 'null') return null;
         try {
@@ -126,219 +162,246 @@ export function usePortalStore() {
       };
 
       const inn = safeParse(localStorage.getItem(STORAGE_KEYS.INNOVATORS));
-      if (inn && Array.isArray(inn) && inn.length > 0 && inn.some((i: any) => i.name?.includes('Viswam') || i.name?.includes('Revathi') || i.name?.includes('Aishwarya'))) {
-        setInnovators(inn);
+      if (inn && Array.isArray(inn) && inn.length > 0) {
+        const filtered = inn.filter(
+          (i: any) =>
+            i &&
+            !isTombstoned(i.id) &&
+            !i.name?.toLowerCase().includes('abhishek') &&
+            !i.designation?.toLowerCase().includes('demo')
+        );
+        const finalInn = filtered.length > 0 ? filtered : INITIAL_INNOVATORS;
+        setInnovators(finalInn);
+        saveItem(STORAGE_KEYS.INNOVATORS, finalInn);
       } else {
         setInnovators(INITIAL_INNOVATORS);
         saveItem(STORAGE_KEYS.INNOVATORS, INITIAL_INNOVATORS);
       }
+
       const p = safeParse(localStorage.getItem(STORAGE_KEYS.PROJECTS));
-      if (p) setProjects(p);
+      if (p && Array.isArray(p)) {
+        const filtered = p.filter((item: any) => !isTombstoned(item.id));
+        setProjects(filtered);
+      }
+
       const n = safeParse(localStorage.getItem(STORAGE_KEYS.NEWS));
-      if (n) setNews(n);
+      if (n && Array.isArray(n)) {
+        const filtered = n.filter((item: any) => !isTombstoned(item.id));
+        setNews(filtered);
+      }
+
       const b = safeParse(localStorage.getItem(STORAGE_KEYS.BLOGS));
-      if (b) setBlogs(b);
+      if (b && Array.isArray(b)) {
+        const filtered = b.filter((item: any) => !isTombstoned(item.id));
+        setBlogs(filtered);
+      }
+
       const bt = safeParse(localStorage.getItem(STORAGE_KEYS.BATCHES));
-      if (bt) setBatches(bt);
+      if (bt && Array.isArray(bt)) {
+        const filtered = bt.filter((item: any) => !isTombstoned(item.id));
+        setBatches(filtered);
+      }
+
       const bi = safeParse(localStorage.getItem(STORAGE_KEYS.BATCH_INFOS));
-      if (bi && Array.isArray(bi) && bi.length > 0 && bi.some((b: any) => b.name?.includes('CREAM LAYER') || b.year?.includes('Cream Layer'))) {
-        setBatchInfos(bi);
+      if (bi && Array.isArray(bi) && bi.length > 0 && bi.some((item: any) => item.name?.includes('CREAM LAYER') || item.year?.includes('Cream Layer'))) {
+        const filtered = bi.filter((item: any) => !isTombstoned(item.id));
+        setBatchInfos(filtered.length > 0 ? filtered : INITIAL_BATCH_INFOS);
       } else {
         setBatchInfos(INITIAL_BATCH_INFOS);
         saveItem(STORAGE_KEYS.BATCH_INFOS, INITIAL_BATCH_INFOS);
       }
+
       const q = safeParse(localStorage.getItem(STORAGE_KEYS.QUESTS));
-      if (q) setQuests(q);
+      if (q && Array.isArray(q)) {
+        const filtered = q.filter((item: any) => !isTombstoned(item.id));
+        setQuests(filtered);
+      }
+
       const t = safeParse(localStorage.getItem(STORAGE_KEYS.TEAMS));
-      if (t) setTeams(t);
+      if (t && Array.isArray(t)) {
+        const filtered = t.filter((item: any) => !isTombstoned(item.id));
+        setTeams(filtered);
+      }
+
       const tk = safeParse(localStorage.getItem(STORAGE_KEYS.TASKS));
-      if (tk) setTasks(tk);
+      if (tk && Array.isArray(tk)) {
+        const filtered = tk.filter((item: any) => !isTombstoned(item.id));
+        setTasks(filtered);
+      }
+
       const sub = safeParse(localStorage.getItem(STORAGE_KEYS.SUBMISSIONS));
-      if (sub) setSubmissions(sub);
+      if (sub && Array.isArray(sub)) {
+        const filtered = sub.filter((item: any) => !isTombstoned(item.id));
+        setSubmissions(filtered);
+      }
+
+      const cs = safeParse(localStorage.getItem(STORAGE_KEYS.SETTINGS));
+      if (cs && cs.contactEmail) {
+        setContactSettings({ ...INITIAL_CONTACT_SETTINGS, ...cs });
+      }
+
       const u = safeParse(localStorage.getItem(STORAGE_KEYS.USER));
       if (u) setUser(u);
 
-      // Fetch live real data from Firestore and subscribe in real-time with resilient map merging
+      // Fetch live real data from Firestore and subscribe with tombstone-protected clean sync
       if (isFirebaseConfigured) {
         const unsubStudents = subscribeToStudents((firestoreStudents) => {
-          if (firestoreStudents) {
-            setBatches((prev) => {
-              const map = new Map<string, BatchMember>();
-              // First add firestore incoming items
-              firestoreStudents.forEach((s) => map.set(s.id, s));
-              // Merge local items that are not in firestore yet
-              prev.forEach((s) => {
-                if (!map.has(s.id)) {
-                  map.set(s.id, s);
-                  saveStudentToFirestore(s).catch(() => {});
-                }
-              });
-              const merged = Array.from(map.values());
-              saveItem(STORAGE_KEYS.BATCHES, merged);
-              return merged;
+          if (firestoreStudents && Array.isArray(firestoreStudents)) {
+            const clean = firestoreStudents.filter((s) => {
+              if (isTombstoned(s.id)) {
+                deleteStudentFromFirestore(s.id).catch(() => {});
+                return false;
+              }
+              return true;
             });
+            setBatches(clean);
+            saveItem(STORAGE_KEYS.BATCHES, clean);
           }
         });
 
         const unsubProjects = subscribeToProjects((firestoreProjects) => {
-          if (firestoreProjects) {
-            setProjects((prev) => {
-              const map = new Map<string, ProjectItem>();
-              firestoreProjects.forEach((p) => map.set(p.id, p));
-              prev.forEach((p) => {
-                if (!map.has(p.id)) {
-                  map.set(p.id, p);
-                  saveProjectToFirestore(p).catch(() => {});
-                }
-              });
-              const merged = Array.from(map.values());
-              saveItem(STORAGE_KEYS.PROJECTS, merged);
-              return merged;
+          if (firestoreProjects && Array.isArray(firestoreProjects)) {
+            const clean = firestoreProjects.filter((p) => {
+              if (isTombstoned(p.id)) {
+                deleteProjectFromFirestore(p.id).catch(() => {});
+                return false;
+              }
+              return true;
             });
+            setProjects(clean);
+            saveItem(STORAGE_KEYS.PROJECTS, clean);
           }
         });
 
         const unsubBatches = subscribeToBatches((firestoreBatches) => {
-          if (firestoreBatches) {
-            setBatchInfos((prev) => {
-              const map = new Map<string, BatchInfo>();
-              firestoreBatches.forEach((b) => map.set(b.id, b));
-              prev.forEach((b) => {
-                if (!map.has(b.id)) {
-                  map.set(b.id, b);
-                  saveBatchToFirestore(b).catch(() => {});
-                }
-              });
-              const merged = Array.from(map.values());
-              saveItem(STORAGE_KEYS.BATCH_INFOS, merged);
-              return merged;
+          if (firestoreBatches && Array.isArray(firestoreBatches)) {
+            const clean = firestoreBatches.filter((b) => {
+              if (isTombstoned(b.id)) {
+                deleteBatchFromFirestore(b.id).catch(() => {});
+                return false;
+              }
+              return true;
             });
+            if (clean.length > 0) {
+              setBatchInfos(clean);
+              saveItem(STORAGE_KEYS.BATCH_INFOS, clean);
+            }
           }
         });
 
         const unsubFaculty = subscribeToFaculty((firestoreFaculty) => {
-          if (firestoreFaculty) {
-            setInnovators((prev) => {
-              const map = new Map<string, LabInnovator>();
-              firestoreFaculty.forEach((f) => map.set(f.id, f));
-              prev.forEach((f) => {
-                if (!map.has(f.id)) {
-                  map.set(f.id, f);
-                  saveFacultyToFirestore(f).catch(() => {});
-                }
-              });
-              const merged = Array.from(map.values());
-              saveItem(STORAGE_KEYS.INNOVATORS, merged);
-              return merged;
+          if (firestoreFaculty && Array.isArray(firestoreFaculty)) {
+            const clean = firestoreFaculty.filter((f) => {
+              const isDemo = f.name?.toLowerCase().includes('abhishek') || f.designation?.toLowerCase().includes('demo');
+              if (isTombstoned(f.id) || isDemo) {
+                addTombstone(f.id);
+                deleteFacultyFromFirestore(f.id).catch(() => {});
+                return false;
+              }
+              return true;
             });
+            // If firestore is empty, seed with INITIAL_INNOVATORS
+            if (clean.length === 0 && firestoreFaculty.length === 0) {
+              INITIAL_INNOVATORS.forEach((fac) => {
+                saveFacultyToFirestore(fac).catch(() => {});
+              });
+              setInnovators(INITIAL_INNOVATORS);
+              saveItem(STORAGE_KEYS.INNOVATORS, INITIAL_INNOVATORS);
+            } else {
+              setInnovators(clean);
+              saveItem(STORAGE_KEYS.INNOVATORS, clean);
+            }
           }
         });
 
         const unsubNews = subscribeToNews((firestoreNews) => {
-          if (firestoreNews) {
-            setNews((prev) => {
-              const map = new Map<string, NewsItem>();
-              firestoreNews.forEach((n) => map.set(n.id, n));
-              prev.forEach((n) => {
-                if (!map.has(n.id)) {
-                  map.set(n.id, n);
-                  saveNewsToFirestore(n).catch(() => {});
-                }
-              });
-              const merged = Array.from(map.values());
-              saveItem(STORAGE_KEYS.NEWS, merged);
-              return merged;
+          if (firestoreNews && Array.isArray(firestoreNews)) {
+            const clean = firestoreNews.filter((n) => {
+              if (isTombstoned(n.id)) {
+                deleteNewsFromFirestore(n.id).catch(() => {});
+                return false;
+              }
+              return true;
             });
+            setNews(clean);
+            saveItem(STORAGE_KEYS.NEWS, clean);
           }
         });
 
         const unsubBlogs = subscribeToBlogs((firestoreBlogs) => {
-          if (firestoreBlogs) {
-            setBlogs((prev) => {
-              const map = new Map<string, BlogItem>();
-              firestoreBlogs.forEach((b) => map.set(b.id, b));
-              prev.forEach((b) => {
-                if (!map.has(b.id)) {
-                  map.set(b.id, b);
-                  saveBlogToFirestore(b).catch(() => {});
-                }
-              });
-              const merged = Array.from(map.values());
-              saveItem(STORAGE_KEYS.BLOGS, merged);
-              return merged;
+          if (firestoreBlogs && Array.isArray(firestoreBlogs)) {
+            const clean = firestoreBlogs.filter((b) => {
+              if (isTombstoned(b.id)) {
+                deleteBlogFromFirestore(b.id).catch(() => {});
+                return false;
+              }
+              return true;
             });
+            setBlogs(clean);
+            saveItem(STORAGE_KEYS.BLOGS, clean);
           }
         });
 
         const unsubQuests = subscribeToQuests((firestoreQuests) => {
-          if (firestoreQuests) {
-            setQuests((prev) => {
-              const map = new Map<string, QuestItem>();
-              firestoreQuests.forEach((q) => map.set(q.id, q));
-              prev.forEach((q) => {
-                if (!map.has(q.id)) {
-                  map.set(q.id, q);
-                  saveQuestToFirestore(q).catch(() => {});
-                }
-              });
-              const merged = Array.from(map.values());
-              saveItem(STORAGE_KEYS.QUESTS, merged);
-              return merged;
+          if (firestoreQuests && Array.isArray(firestoreQuests)) {
+            const clean = firestoreQuests.filter((q) => {
+              if (isTombstoned(q.id)) {
+                deleteQuestFromFirestore(q.id).catch(() => {});
+                return false;
+              }
+              return true;
             });
+            setQuests(clean);
+            saveItem(STORAGE_KEYS.QUESTS, clean);
           }
         });
 
         const unsubTeams = subscribeToTeams((firestoreTeams) => {
-          if (firestoreTeams) {
-            setTeams((prev) => {
-              const map = new Map<string, TeamItem>();
-              firestoreTeams.forEach((t) => map.set(t.id, t));
-              prev.forEach((t) => {
-                if (!map.has(t.id)) {
-                  map.set(t.id, t);
-                  saveTeamToFirestore(t).catch(() => {});
-                }
-              });
-              const merged = Array.from(map.values());
-              saveItem(STORAGE_KEYS.TEAMS, merged);
-              return merged;
+          if (firestoreTeams && Array.isArray(firestoreTeams)) {
+            const clean = firestoreTeams.filter((t) => {
+              if (isTombstoned(t.id)) {
+                deleteTeamFromFirestore(t.id).catch(() => {});
+                return false;
+              }
+              return true;
             });
+            setTeams(clean);
+            saveItem(STORAGE_KEYS.TEAMS, clean);
           }
         });
 
         const unsubTasks = subscribeToTasks((firestoreTasks) => {
-          if (firestoreTasks) {
-            setTasks((prev) => {
-              const map = new Map<string, TaskItem>();
-              firestoreTasks.forEach((t) => map.set(t.id, t));
-              prev.forEach((t) => {
-                if (!map.has(t.id)) {
-                  map.set(t.id, t);
-                  saveTaskToFirestore(t).catch(() => {});
-                }
-              });
-              const merged = Array.from(map.values());
-              saveItem(STORAGE_KEYS.TASKS, merged);
-              return merged;
+          if (firestoreTasks && Array.isArray(firestoreTasks)) {
+            const clean = firestoreTasks.filter((t) => {
+              if (isTombstoned(t.id)) {
+                deleteTaskFromFirestore(t.id).catch(() => {});
+                return false;
+              }
+              return true;
             });
+            setTasks(clean);
+            saveItem(STORAGE_KEYS.TASKS, clean);
           }
         });
 
         const unsubSubmissions = subscribeToSubmissions((firestoreSubs) => {
-          if (firestoreSubs) {
-            setSubmissions((prev) => {
-              const map = new Map<string, SubmissionItem>();
-              firestoreSubs.forEach((s) => map.set(s.id, s));
-              prev.forEach((s) => {
-                if (!map.has(s.id)) {
-                  map.set(s.id, s);
-                  saveSubmissionToFirestore(s).catch(() => {});
-                }
-              });
-              const merged = Array.from(map.values());
-              saveItem(STORAGE_KEYS.SUBMISSIONS, merged);
-              return merged;
+          if (firestoreSubs && Array.isArray(firestoreSubs)) {
+            const clean = firestoreSubs.filter((s) => {
+              if (isTombstoned(s.id)) {
+                deleteSubmissionFromFirestore(s.id).catch(() => {});
+                return false;
+              }
+              return true;
             });
+            setSubmissions(clean);
+            saveItem(STORAGE_KEYS.SUBMISSIONS, clean);
+          }
+        });
+
+        const unsubSettings = subscribeToSettings((firestoreSettings) => {
+          if (firestoreSettings && firestoreSettings.contactEmail) {
+            setContactSettings((prev) => ({ ...prev, ...firestoreSettings }));
+            saveItem(STORAGE_KEYS.SETTINGS, firestoreSettings);
           }
         });
 
@@ -353,6 +416,7 @@ export function usePortalStore() {
           unsubTeams();
           unsubTasks();
           unsubSubmissions();
+          unsubSettings();
         };
       }
     } catch {
@@ -441,6 +505,7 @@ export function usePortalStore() {
   };
 
   const deleteIntern = (internId: string) => {
+    addTombstone(internId);
     const updated = batches.filter((b) => b.id !== internId);
     setBatches(updated);
     saveItem(STORAGE_KEYS.BATCHES, updated);
@@ -563,6 +628,7 @@ export function usePortalStore() {
   };
 
   const deleteSubmission = (subId: string) => {
+    addTombstone(subId);
     const nextSubs = submissions.filter((s) => s.id !== subId);
     setSubmissions(nextSubs);
     saveItem(STORAGE_KEYS.SUBMISSIONS, nextSubs);
@@ -614,6 +680,7 @@ export function usePortalStore() {
   };
 
   const deleteQuest = (questId: string) => {
+    addTombstone(questId);
     const updated = quests.filter((q) => q.id !== questId);
     setQuests(updated);
     saveItem(STORAGE_KEYS.QUESTS, updated);
@@ -660,6 +727,7 @@ export function usePortalStore() {
   };
 
   const deleteTask = (taskId: string) => {
+    addTombstone(taskId);
     const updated = tasks.filter((t) => t.id !== taskId);
     setTasks(updated);
     saveItem(STORAGE_KEYS.TASKS, updated);
@@ -712,6 +780,7 @@ export function usePortalStore() {
   };
 
   const deleteTeam = (teamId: string) => {
+    addTombstone(teamId);
     const updated = teams.filter((t) => t.id !== teamId);
     setTeams(updated);
     saveItem(STORAGE_KEYS.TEAMS, updated);
@@ -794,6 +863,7 @@ export function usePortalStore() {
   };
 
   const deleteProject = (id: string) => {
+    addTombstone(id);
     const updated = projects.filter((p) => p.id !== id);
     setProjects(updated);
     saveItem(STORAGE_KEYS.PROJECTS, updated);
@@ -858,6 +928,7 @@ export function usePortalStore() {
   };
 
   const deleteBlog = (id: string) => {
+    addTombstone(id);
     const updated = blogs.filter((b) => b.id !== id);
     setBlogs(updated);
     saveItem(STORAGE_KEYS.BLOGS, updated);
@@ -926,6 +997,7 @@ export function usePortalStore() {
   };
 
   const deleteNews = (id: string) => {
+    addTombstone(id);
     const updated = news.filter((n) => n.id !== id);
     setNews(updated);
     saveItem(STORAGE_KEYS.NEWS, updated);
@@ -1265,6 +1337,7 @@ export function usePortalStore() {
   };
 
   const deleteBatch = (id: string) => {
+    addTombstone(id);
     const updated = batchInfos.filter((b) => b.id !== id);
     setBatchInfos(updated);
     saveItem(STORAGE_KEYS.BATCH_INFOS, updated);
@@ -1298,6 +1371,7 @@ export function usePortalStore() {
   };
 
   const deleteFaculty = (id: string) => {
+    addTombstone(id);
     const updated = innovators.filter((f) => f.id !== id);
     setInnovators(updated);
     saveItem(STORAGE_KEYS.INNOVATORS, updated);
@@ -1317,6 +1391,19 @@ export function usePortalStore() {
     return target?.isHead;
   };
 
+  const updateContactSettings = async (settings: Partial<ContactSettings>) => {
+    const updated: ContactSettings = { ...contactSettings, ...settings };
+    setContactSettings(updated);
+    saveItem(STORAGE_KEYS.SETTINGS, updated);
+    if (isFirebaseConfigured) {
+      try {
+        await saveSettingsToFirestore(updated);
+      } catch (err) {
+        console.error('Failed to sync settings to Firestore:', err);
+      }
+    }
+  };
+
   return {
     mounted,
     innovators,
@@ -1330,6 +1417,8 @@ export function usePortalStore() {
     teams,
     tasks,
     submissions,
+    contactSettings,
+    updateContactSettings,
     user,
     setUser: updateUser,
     switchUser,

@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminFacultyPage() {
-  const { innovators, deleteFaculty, toggleFacultyHead } = usePortalStore();
+  const { mounted, innovators, deleteFaculty, toggleFacultyHead } = usePortalStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [deletingFaculty, setDeletingFaculty] = useState<LabInnovator | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
@@ -43,8 +43,9 @@ export default function AdminFacultyPage() {
 
   const handleConfirmDelete = () => {
     if (!deletingFaculty) return;
+    const name = deletingFaculty.name;
     deleteFaculty(deletingFaculty.id);
-    setNotification(`Faculty mentor "${deletingFaculty.name}" removed from platform and Firestore.`);
+    setNotification(`✓ Faculty mentor "${name}" permanently deleted.`);
     setDeletingFaculty(null);
     setTimeout(() => setNotification(null), 3500);
   };
@@ -59,9 +60,11 @@ export default function AdminFacultyPage() {
             <h1 className="text-[26px] sm:text-[30px] font-black text-[#0A0A0A] tracking-tight">
               Faculty Mentors & Advisors
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-              {innovators.length} Mentors Registered
-            </span>
+            {mounted && (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                {innovators.length} Mentors Registered
+              </span>
+            )}
           </div>
           <p className="text-[14px] text-[#6B7280] mt-1">
             Manage lab directors, research mentors, faculty guides, and academic advisors linked to cohorts and projects.
@@ -79,7 +82,7 @@ export default function AdminFacultyPage() {
 
       {/* Notification Toast */}
       {notification && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-[13px] font-medium flex items-center justify-between shadow-xs">
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-[13px] font-medium flex items-center justify-between shadow-xs animate-in fade-in duration-200">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{notification}</span>
@@ -103,13 +106,40 @@ export default function AdminFacultyPage() {
           </div>
 
           <div className="text-[13px] text-[#6B7280]">
-            Showing <strong>{filteredFaculty.length}</strong> of {innovators.length} mentors
+            {mounted ? (
+              <>Showing <strong>{filteredFaculty.length}</strong> of {innovators.length} mentors</>
+            ) : (
+              <div className="w-28 h-4 bg-gray-200 animate-pulse rounded" />
+            )}
           </div>
         </div>
       </Card>
 
-      {/* Faculty Cards Grid */}
-      {filteredFaculty.length === 0 ? (
+      {/* Faculty Cards Grid or Skeleton Loader */}
+      {!mounted ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((idx) => (
+            <Card key={idx} className="p-6 border-[#E5E7EB] space-y-4 animate-pulse">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-full bg-gray-200 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="w-3/4 h-4 bg-gray-200 rounded" />
+                  <div className="w-1/2 h-3 bg-gray-100 rounded" />
+                  <div className="w-2/3 h-3 bg-gray-100 rounded" />
+                </div>
+              </div>
+              <div className="w-full h-14 bg-gray-100 rounded-xl" />
+              <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+                <div className="w-28 h-6 bg-gray-200 rounded-full" />
+                <div className="flex gap-2">
+                  <div className="w-7 h-7 bg-gray-200 rounded-lg" />
+                  <div className="w-7 h-7 bg-gray-200 rounded-lg" />
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : filteredFaculty.length === 0 ? (
         <Card className="p-12 text-center border-[#E5E7EB] bg-[#FAFAFA]">
           <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3">
             <Award className="w-6 h-6" />
