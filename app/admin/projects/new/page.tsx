@@ -7,6 +7,7 @@ import Card from '@/components/shared/Card';
 import Button from '@/components/shared/Button';
 import { Input, Textarea } from '@/components/shared/Input';
 import MemberAvatar from '@/components/shared/MemberAvatar';
+import ProjectThumbnail from '@/components/shared/ProjectThumbnail';
 import { usePortalStore } from '@/lib/store';
 import { ProjectItem } from '@/lib/data';
 import { uploadMediaFile, getMediaDisplayUrl } from '@/lib/mediaService';
@@ -77,8 +78,11 @@ function ProjectEditorContent() {
 
   // Media state
   const [imageUrl, setImageUrl] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [newPhotoUrlInput, setNewPhotoUrlInput] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isUploadingMultiPhotos, setIsUploadingMultiPhotos] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState<number>(0);
   const [uploadSuccessMessage, setUploadSuccessMessage] = useState<string | null>(null);
@@ -95,6 +99,7 @@ function ProjectEditorContent() {
   const [previewTab, setPreviewTab] = useState<'card' | 'details'>('card');
 
   const imageFileInputRef = useRef<HTMLInputElement>(null);
+  const multiPhotoInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
 
   // Populate data if editing
@@ -111,6 +116,7 @@ function ProjectEditorContent() {
       setTeamLead(existingProject.teamLead || '');
       setMembers(existingProject.members || []);
       setImageUrl(existingProject.imageUrl || '');
+      setImages(existingProject.images || []);
       setVideoUrl(existingProject.videoUrl || '');
       setDemoUrl(existingProject.demoUrl || '');
       setRepoUrl(existingProject.repoUrl || '');
@@ -226,6 +232,41 @@ function ProjectEditorContent() {
     }
   };
 
+  const handleMultiPhotosChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploadingMultiPhotos(true);
+    setUploadSuccessMessage(null);
+
+    try {
+      const urls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const u = await uploadMediaFile(files[i], 'projects/gallery');
+        if (u) urls.push(u);
+      }
+      setImages((prev) => [...prev, ...urls]);
+      setUploadSuccessMessage(`Successfully uploaded ${urls.length} additional project photos!`);
+      setTimeout(() => setUploadSuccessMessage(null), 3500);
+    } catch (err: unknown) {
+      const eMsg = err instanceof Error ? err.message : 'Upload failed';
+      setNotification({ type: 'error', message: `Could not upload photos: ${eMsg}` });
+    } finally {
+      setIsUploadingMultiPhotos(false);
+      if (multiPhotoInputRef.current) multiPhotoInputRef.current.value = '';
+    }
+  };
+
+  const handleAddPhotoUrl = () => {
+    if (!newPhotoUrlInput.trim()) return;
+    setImages((prev) => [...prev, newPhotoUrlInput.trim()]);
+    setNewPhotoUrlInput('');
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -275,6 +316,7 @@ function ProjectEditorContent() {
       const finalTeamLead = teamLead.trim() || (members[0] || 'Team Lead');
       const finalMembers = members.length > 0 ? members : [finalTeamLead];
       const finalTechStack = techStack.length > 0 ? techStack : [category, 'IoT'];
+      const finalImages = images.filter((img) => Boolean(img && img.trim()));
 
       if (isEditing && editId) {
         updateProject(editId, {
@@ -287,6 +329,7 @@ function ProjectEditorContent() {
           teamLead: finalTeamLead,
           members: finalMembers,
           imageUrl: finalImage,
+          images: finalImages,
           videoUrl: videoUrl.trim() || undefined,
           demoUrl: demoUrl.trim() || undefined,
           repoUrl: repoUrl.trim() || undefined,
@@ -307,6 +350,7 @@ function ProjectEditorContent() {
           teamLead: finalTeamLead,
           members: finalMembers,
           imageUrl: finalImage,
+          images: finalImages,
           videoUrl: videoUrl.trim() || undefined,
           demoUrl: demoUrl.trim() || undefined,
           repoUrl: repoUrl.trim() || undefined,
@@ -661,6 +705,96 @@ function ProjectEditorContent() {
                 </div>
               )}
             </div>
+
+            {/* Additional Project Photos & Gallery Media ("Add more photos") */}
+            <div className="space-y-3 pt-3 border-t border-[#F3F4F6]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="block text-[13px] font-semibold text-[#0A0A0A] flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-blue-600" />
+                    <span>Additional Project Photos & Gallery Images</span>
+                    <span className="text-[11px] text-gray-400 font-normal">({images.length} added)</span>
+                  </label>
+                  <p className="text-[12px] text-[#6B7280]">
+                    Upload testing photos, schematics, and prototype shots. These appear in the project gallery strip and public gallery!
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  icon={isUploadingMultiPhotos ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  onClick={() => multiPhotoInputRef.current?.click()}
+                  disabled={isUploadingMultiPhotos}
+                >
+                  {isUploadingMultiPhotos ? 'Uploading...' : 'Upload Photos'}
+                </Button>
+              </div>
+
+              <input
+                type="file"
+                ref={multiPhotoInputRef}
+                onChange={handleMultiPhotosChange}
+                accept="image/*"
+                multiple
+                className="hidden"
+              />
+
+              {/* Paste image URL row */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Or paste external photo URL..."
+                  value={newPhotoUrlInput}
+                  onChange={(e) => setNewPhotoUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddPhotoUrl();
+                    }
+                  }}
+                  className="text-[13px]"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddPhotoUrl}
+                  disabled={!newPhotoUrlInput.trim()}
+                >
+                  Add Photo
+                </Button>
+              </div>
+
+              {/* Uploaded Photos Grid */}
+              {images.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5 pt-2">
+                  {images.map((photoUrl, idx) => (
+                    <div
+                      key={idx}
+                      className="group relative aspect-square rounded-xl overflow-hidden border border-gray-200 bg-gray-100 shadow-xs"
+                    >
+                      <img
+                        src={getMediaDisplayUrl(photoUrl)}
+                        alt={`Project photo ${idx + 1}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <span className="absolute bottom-1 left-1 px-1.5 py-0.2 rounded bg-black/70 text-white text-[9px] font-bold">
+                        #{idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(idx)}
+                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-700"
+                        title="Delete photo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </Card>
 
           {/* Card 3: Research Team & Authors */}
@@ -990,48 +1124,16 @@ function ProjectEditorContent() {
 
           {/* Render the Exact Project Card */}
           <div className="border border-[#E5E7EB] rounded-[20px] bg-white overflow-hidden shadow-md">
-            {/* Media Header */}
-            <div className="relative h-48 w-full bg-slate-950 overflow-hidden">
-              {videoUrl ? (
-                <div className="relative w-full h-full">
-                  <video src={getMediaDisplayUrl(videoUrl)} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 pointer-events-none" />
-                  <div className="absolute bottom-3 left-3">
-                    <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
-                      <Video className="w-3 h-3 text-red-400" />
-                      VIDEO
-                    </span>
-                  </div>
-                </div>
-              ) : imageUrl ? (
-                <div className="relative w-full h-full">
-                  <img src={getMediaDisplayUrl(imageUrl)} alt={title || 'Project'} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
-                </div>
-              ) : (
-                <div className="relative w-full h-full bg-gradient-to-br from-cyan-950 via-teal-900/80 to-slate-900 p-4 flex flex-col justify-between select-none">
-                  <div className="relative z-10 flex items-center justify-between">
-                    <span className="text-3xl font-black text-cyan-400 opacity-40">◈</span>
-                  </div>
-                  <span className="text-xs text-white/50">Upload an image to see live preview</span>
-                </div>
-              )}
-
-              {/* Batch badge */}
-              <div className="absolute top-3 left-3 z-10">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-white/95 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15 shadow-xs">
-                  Batch {batchYear}
-                </span>
-              </div>
-
-              {/* Verified badge */}
-              <div className="absolute top-3 right-3 z-10">
-                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-white/95 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15 shadow-xs">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  Verified
-                </span>
-              </div>
+            {/* Media Header with Interactive Thumbnail & Gallery Strip */}
+            <div className="p-3 bg-slate-950/5 border-b border-[#E5E7EB]">
+              <ProjectThumbnail
+                imageUrl={imageUrl}
+                images={images}
+                videoUrl={videoUrl}
+                title={title || 'Project Preview'}
+                category={category}
+                className="h-48 w-full rounded-lg"
+              />
             </div>
 
             {/* Card Content Body */}

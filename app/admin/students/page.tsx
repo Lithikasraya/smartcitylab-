@@ -1014,7 +1014,9 @@ export default function AdminStudentsCRMPage() {
                     <tr>
                       <th className="py-2 px-3">Name</th>
                       <th className="py-2 px-3">Roll No</th>
+                      <th className="py-2 px-3">Phone</th>
                       <th className="py-2 px-3">Batch</th>
+                      <th className="py-2 px-3">Year</th>
                       <th className="py-2 px-3">Branch</th>
                       <th className="py-2 px-3">Role</th>
                       <th className="py-2 px-3">Team</th>
@@ -1025,7 +1027,9 @@ export default function AdminStudentsCRMPage() {
                       <tr key={i} className="hover:bg-[#F8F9FA]">
                         <td className="py-2 px-3 font-semibold text-[#0A0A0A]">{row.name}</td>
                         <td className="py-2 px-3 font-mono text-[#6B7280]">{row.rollNo}</td>
+                        <td className="py-2 px-3 font-mono text-slate-600">{row.phone || '—'}</td>
                         <td className="py-2 px-3">Batch {row.batchYear || '2026'}</td>
+                        <td className="py-2 px-3">{row.year || '3rd Year'}</td>
                         <td className="py-2 px-3">{row.branch || 'CSE'}</td>
                         <td className="py-2 px-3 font-medium text-[#2563EB]">{row.role || 'Student'}</td>
                         <td className="py-2 px-3 text-[#6B7280]">{row.teamName || 'Unassigned'}</td>

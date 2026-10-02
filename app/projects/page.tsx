@@ -188,38 +188,41 @@ export default function ProjectsPage() {
         isOpen={!!activeModalProject}
         onClose={() => setActiveModalProject(null)}
         title={activeModalProject?.title}
-        maxWidth="xl"
+        maxWidth="2xl"
       >
         {activeModalProject && (
           <div className="space-y-6 text-left">
             <ProjectThumbnail
               imageUrl={activeModalProject.imageUrl}
+              images={activeModalProject.images}
               videoUrl={activeModalProject.videoUrl}
               title={activeModalProject.title}
               category={activeModalProject.category}
-              className="h-64 w-full rounded-lg"
+              className="h-72 sm:h-80 w-full rounded-xl"
             />
 
             <div className="space-y-2">
-              <div className="flex items-center gap-3 text-[13px] text-[#6B7280]">
-                <span className="font-semibold text-[#2563EB]">{activeModalProject.category}</span>
+              <div className="flex flex-wrap items-center gap-2.5 text-[13px] text-[#6B7280]">
+                <span className="font-bold text-[#2563EB] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                  {activeModalProject.category}
+                </span>
                 <span>•</span>
-                <span>Batch {activeModalProject.batchYear}</span>
+                <span className="font-semibold text-gray-700">Batch {activeModalProject.batchYear}</span>
                 <span>•</span>
-                <span>Team: {activeModalProject.teamName}</span>
+                <span>Team: <strong className="text-gray-900">{activeModalProject.teamName}</strong></span>
               </div>
-              <p className="text-[15px] text-[#0A0A0A] leading-relaxed">
+              <p className="text-[15px] text-[#0A0A0A] leading-relaxed pt-1">
                 {activeModalProject.description}
               </p>
             </div>
 
             <div>
-              <h4 className="text-[14px] font-bold text-[#0A0A0A] mb-2">Technologies Used</h4>
+              <h4 className="text-[13px] font-bold uppercase tracking-wider text-gray-400 mb-2">Technologies & Hardware</h4>
               <div className="flex flex-wrap gap-2">
                 {activeModalProject.techStack.map((tech) => (
                   <span
                     key={tech}
-                    className="px-2.5 py-1 rounded-md text-[13px] bg-[#F8F9FA] text-[#0A0A0A] border border-[#E5E7EB]"
+                    className="px-2.5 py-1 rounded-md text-[12px] bg-[#F8F9FA] text-[#0A0A0A] font-medium border border-[#E5E7EB]"
                   >
                     {tech}
                   </span>
@@ -271,30 +274,88 @@ export default function ProjectsPage() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-[#E5E7EB] flex items-center justify-end gap-3">
-              {activeModalProject.repoUrl && (
-                <a
-                  href={activeModalProject.repoUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Button variant="outline" size="sm" icon={<Github className="w-4 h-4" />}>
-                    Repository
-                  </Button>
-                </a>
-              )}
-              {activeModalProject.demoUrl && (
-                <a
-                  href={activeModalProject.demoUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Button variant="primary" size="sm" icon={<ExternalLink className="w-4 h-4" />}>
-                    Live Demo
-                  </Button>
-                </a>
-              )}
+            {/* Links and Action Bar */}
+            <div className="pt-3 border-t border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
+              <span className="text-[12px] text-gray-500">
+                Published {activeModalProject.publishedAt || '2026'}
+              </span>
+              <div className="flex items-center gap-2.5">
+                {activeModalProject.repoUrl && (
+                  <a
+                    href={activeModalProject.repoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Button variant="outline" size="sm" icon={<Github className="w-4 h-4" />}>
+                      Source Code
+                    </Button>
+                  </a>
+                )}
+                {activeModalProject.demoUrl && (
+                  <a
+                    href={activeModalProject.demoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Button variant="primary" size="sm" icon={<ExternalLink className="w-4 h-4" />}>
+                      Live Demo
+                    </Button>
+                  </a>
+                )}
+              </div>
             </div>
+
+            {/* LOWER SECTION: Other Lab Projects */}
+            {approvedProjects.filter((p) => p.id !== activeModalProject.id).length > 0 && (
+              <div className="pt-5 border-t border-[#E5E7EB] space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[14px] font-bold text-[#0A0A0A] flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    <span>Explore Other Lab Projects</span>
+                  </h4>
+                  <span className="text-[12px] text-gray-400">Click to preview</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {approvedProjects
+                    .filter((p) => p.id !== activeModalProject.id)
+                    .slice(0, 4)
+                    .map((otherProj) => (
+                      <button
+                        key={otherProj.id}
+                        type="button"
+                        onClick={() => setActiveModalProject(otherProj)}
+                        className="p-3 rounded-xl border border-gray-200 hover:border-blue-500 bg-white hover:bg-blue-50/40 transition-all flex items-center gap-3 text-left group"
+                      >
+                        <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-slate-900 border border-gray-200">
+                          {otherProj.imageUrl ? (
+                            <img
+                              src={otherProj.imageUrl}
+                              alt={otherProj.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-white text-[10px] font-bold">
+                              DEMO
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider block truncate">
+                            {otherProj.category}
+                          </span>
+                          <h5 className="text-[13px] font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                            {otherProj.title}
+                          </h5>
+                          <span className="text-[11px] text-gray-500 truncate block">
+                            Batch {otherProj.batchYear} • {otherProj.teamName}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>

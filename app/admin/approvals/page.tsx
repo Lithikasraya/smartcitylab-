@@ -318,17 +318,27 @@ export default function AdminApprovalsPage() {
         <div className="p-4 sm:p-5 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-4 bg-[#FAFAFA]">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[13px] text-[#6B7280] font-semibold mr-1">Status:</span>
-            {(['all', 'pending', 'approved', 'rejected'] as const).map((s) => (
+            {[
+              { key: 'all', label: 'All', count: submissions.length },
+              { key: 'pending', label: 'Pending', count: submissions.filter((s) => s.status === 'pending').length },
+              { key: 'approved', label: 'Approved', count: submissions.filter((s) => s.status === 'approved').length },
+              { key: 'rejected', label: 'Rejected', count: submissions.filter((s) => s.status === 'rejected').length },
+            ].map((tab) => (
               <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold border capitalize transition-colors ${
-                  statusFilter === s
-                    ? 'border-[#2563EB] text-[#2563EB] bg-blue-50'
+                key={tab.key}
+                onClick={() => setStatusFilter(tab.key as any)}
+                className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold border capitalize transition-colors flex items-center gap-1.5 ${
+                  statusFilter === tab.key
+                    ? 'border-[#2563EB] text-[#2563EB] bg-blue-50 font-bold shadow-2xs'
                     : 'border-[#E5E7EB] bg-white text-[#6B7280] hover:text-[#0A0A0A]'
                 }`}
               >
-                {s}
+                <span>{tab.label}</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  statusFilter === tab.key ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {tab.count}
+                </span>
               </button>
             ))}
           </div>
@@ -377,14 +387,25 @@ export default function AdminApprovalsPage() {
                 {filteredSubs.map((sub, idx) => {
                   const details = (sub.details || {}) as Record<string, unknown>;
                   const associatedTeam = teams.find((t) => t.name === sub.teamName);
-                  const leadName = (details.teamLead as string) || associatedTeam?.teamLead.name || sub.studentName;
-                  const leadEmail = (details.teamLeadEmail as string) || associatedTeam?.teamLead.email || `${leadName.toLowerCase().replace(/\s+/g, '.')}@kiet.edu`;
+                  const leadName = (details.teamLead as string) || associatedTeam?.teamLead?.name || sub.studentName || 'Team Lead';
+                  const leadEmail = (details.teamLeadEmail as string) || associatedTeam?.teamLead?.email || `${leadName.toLowerCase().replace(/\s+/g, '.')}@kiet.edu`;
                   
-                  // Extract members from proposal details or team
-                  const membersList = (details.members as Array<{ name: string; rollNo?: string; role?: string }>) || 
-                    associatedTeam?.members || [
-                      { name: sub.studentName, rollNo: sub.studentRoll, role: 'Author' }
-                    ];
+                  // Extract and normalize members from proposal details, member roster, or associated team
+                  const rawMembers = (details.memberRoster as any[]) || (details.members as any[]) || associatedTeam?.members || [
+                    { name: sub.studentName, rollNo: sub.studentRoll, role: 'Author' }
+                  ];
+                  const membersList = (Array.isArray(rawMembers) ? rawMembers : []).map((m: any) => {
+                    if (typeof m === 'string') {
+                      return { name: m, rollNo: '', role: 'Member' };
+                    }
+                    return {
+                      name: m?.name || 'Member',
+                      rollNo: m?.rollNo || '',
+                      role: m?.role || 'Member',
+                      email: m?.email || '',
+                      attendance: m?.attendance,
+                    };
+                  });
 
                   const hasImage = Boolean(details.imageUrl);
                   const hasVideo = Boolean(details.videoUrl);
@@ -437,7 +458,7 @@ export default function AdminApprovalsPage() {
                               title={`${m.name} (${m.role || 'Member'})`}
                               className="w-7 h-7 rounded-full border-2 border-white bg-slate-800 text-white text-[11px] font-bold flex items-center justify-center uppercase shadow-xs"
                             >
-                              {m.name.charAt(0)}
+                              {(m.name || 'M').charAt(0)}
                             </div>
                           ))}
                           {membersList.length > 4 && (
@@ -510,23 +531,45 @@ export default function AdminApprovalsPage() {
                               Inspect
                             </button>
 
-                            {sub.status !== 'approved' && (
-                              <button
-                                onClick={() => handleApprove(sub.id, sub.title)}
-                                className="p-1.5 rounded-lg border border-[#10B981] bg-emerald-50 text-[#10B981] hover:bg-emerald-100 transition-colors shadow-xs"
-                                title="Approve & Publish Live"
-                              >
-                                <Check className="w-4 h-4" />
-                              </button>
+                            {sub.status === 'pending' && (
+                              <>
+                                <button
+                                  onClick={() => handleApprove(sub.id, sub.title)}
+                                  className="p-1.5 rounded-lg border border-[#10B981] bg-emerald-50 text-[#10B981] hover:bg-emerald-100 transition-colors shadow-xs"
+                                  title="Approve & Publish Live"
+                                >
+                                  <Check className="w-4 h-4" />
+                                </button>
+
+                                <button
+                                  onClick={() => setRejectingItem(sub)}
+                                  className="p-1.5 rounded-lg border border-[#EF4444] bg-red-50 text-[#EF4444] hover:bg-red-100 transition-colors shadow-xs"
+                                  title="Reject with Feedback"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </>
                             )}
 
-                            {sub.status !== 'rejected' && (
-                              <button
-                                onClick={() => setRejectingItem(sub)}
-                                className="p-1.5 rounded-lg border border-[#EF4444] bg-red-50 text-[#EF4444] hover:bg-red-100 transition-colors shadow-xs"
-                                title="Reject with Feedback"
+                            {sub.status === 'approved' && (
+                              <Link
+                                href={sub.type === 'project' ? '/projects' : sub.type === 'blog' ? '/blogs' : '/news'}
+                                target="_blank"
+                                className="px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 text-[11px] font-bold inline-flex items-center gap-1 hover:bg-emerald-100 transition-colors shadow-2xs"
+                                title="View published content on live site"
                               >
-                                <X className="w-4 h-4" />
+                                <span>View Live</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </Link>
+                            )}
+
+                            {sub.status === 'rejected' && (
+                              <button
+                                onClick={() => handleApprove(sub.id, sub.title)}
+                                className="px-2.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 text-[11px] font-bold flex items-center gap-1 hover:bg-blue-100 transition-colors shadow-2xs"
+                                title="Re-approve submission"
+                              >
+                                <span>Re-approve</span>
                               </button>
                             )}
                           </div>
@@ -561,11 +604,22 @@ export default function AdminApprovalsPage() {
         const techStack = (details.techStack as string[]) || [];
 
         const associatedTeam = teams.find((t) => t.name === inspectingSub.teamName);
-        const membersList = (details.members as Array<{ name: string; rollNo?: string; email?: string; role?: string; attendance?: number }>) || 
-          associatedTeam?.members || [];
-        const leadName = (details.teamLead as string) || associatedTeam?.teamLead.name || inspectingSub.studentName;
-        const leadRoll = (details.teamLeadRoll as string) || inspectingSub.studentRoll;
-        const leadEmail = (details.teamLeadEmail as string) || associatedTeam?.teamLead.email || '';
+        const rawModalMembers = (details.memberRoster as any[]) || (details.members as any[]) || associatedTeam?.members || [];
+        const membersList = (Array.isArray(rawModalMembers) ? rawModalMembers : []).map((m: any) => {
+          if (typeof m === 'string') {
+            return { name: m, rollNo: '', role: 'Member', email: '' };
+          }
+          return {
+            name: m?.name || 'Member',
+            rollNo: m?.rollNo || '',
+            email: m?.email || '',
+            role: m?.role || 'Member',
+            attendance: m?.attendance,
+          };
+        });
+        const leadName = (details.teamLead as string) || associatedTeam?.teamLead?.name || inspectingSub.studentName || 'Team Lead';
+        const leadRoll = (details.teamLeadRoll as string) || inspectingSub.studentRoll || 'N/A';
+        const leadEmail = (details.teamLeadEmail as string) || associatedTeam?.teamLead?.email || '';
 
         const ytEmbed = getYoutubeEmbedUrl(videoUrl);
 
@@ -762,7 +816,7 @@ export default function AdminApprovalsPage() {
                   <div className="p-3 rounded-xl border border-blue-300 bg-blue-50/50 text-[13px] flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center uppercase shadow-xs">
-                        {leadName.charAt(0)}
+                        {(leadName || 'T').charAt(0)}
                       </div>
                       <div>
                         <div className="font-bold text-blue-950 flex items-center gap-1.5">
@@ -779,7 +833,7 @@ export default function AdminApprovalsPage() {
                     <div key={idx} className="p-3 rounded-xl border border-gray-200 bg-white text-[13px] flex items-center justify-between shadow-2xs">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-slate-800 text-white font-bold text-xs flex items-center justify-center uppercase">
-                          {m.name.charAt(0)}
+                          {(m.name || 'M').charAt(0)}
                         </div>
                         <div>
                           <div className="font-semibold text-[#0A0A0A]">{m.name}</div>

@@ -104,9 +104,18 @@ export async function compressImageToBase64(file: File | Blob, maxWidth = 1280, 
  */
 export function getMediaDisplayUrl(url?: string): string {
   if (!url) return '';
-  if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('http')) {
-    if (url.includes('.r2.cloudflarestorage.com/')) {
-      const parts = url.split('.r2.cloudflarestorage.com/');
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+
+  // Handle Google Drive file URLs
+  const driveMatch = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
+  if (driveMatch && driveMatch[1]) {
+    return `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
+  }
+
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:') || trimmed.startsWith('http')) {
+    if (trimmed.includes('.r2.cloudflarestorage.com/')) {
+      const parts = trimmed.split('.r2.cloudflarestorage.com/');
       if (parts[1]) {
         const pathWithBucket = parts[1];
         const slashIndex = pathWithBucket.indexOf('/');
@@ -114,9 +123,9 @@ export function getMediaDisplayUrl(url?: string): string {
         return `/api/media/${cleanPath}`;
       }
     }
-    return url;
+    return trimmed;
   }
-  return url;
+  return trimmed;
 }
 
 /**
@@ -124,10 +133,47 @@ export function getMediaDisplayUrl(url?: string): string {
  */
 export function getYouTubeEmbedUrl(url?: string): string | null {
   if (!url) return null;
-  const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  // Match youtube.com/watch?v=..., youtu.be/..., youtube.com/shorts/..., youtube.com/embed/...
+  const ytMatch = trimmed.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
   if (ytMatch && ytMatch[1]) {
-    return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&loop=1&playlist=${ytMatch[1]}&controls=0&modestbranding=1`;
+    return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1&mute=1&loop=1&playlist=${ytMatch[1]}&controls=1&modestbranding=1&rel=0`;
   }
+
+  // Handle Vimeo links
+  const vimeoMatch = trimmed.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|)(\d+)/i);
+  if (vimeoMatch && vimeoMatch[3]) {
+    return `https://player.vimeo.com/video/${vimeoMatch[3]}?autoplay=1&muted=1&loop=1`;
+  }
+
+  // Handle Google Drive preview video links
+  const driveMatch = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
+  if (driveMatch && driveMatch[1]) {
+    return `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
+  }
+
   return null;
 }
+
+/**
+ * Helper to check if a URL or data string represents a video
+ */
+export function isVideoUrl(url?: string): boolean {
+  if (!url) return false;
+  const lower = url.toLowerCase().trim();
+  if (getYouTubeEmbedUrl(url)) return true;
+  if (lower.startsWith('data:video/')) return true;
+  return (
+    lower.endsWith('.mp4') ||
+    lower.endsWith('.webm') ||
+    lower.endsWith('.mov') ||
+    lower.endsWith('.ogg') ||
+    lower.endsWith('.m4v') ||
+    lower.includes('/videos/') ||
+    lower.includes('player.vimeo.com')
+  );
+}
+
 

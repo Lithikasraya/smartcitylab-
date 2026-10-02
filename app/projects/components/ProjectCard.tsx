@@ -93,11 +93,9 @@ export default function ProjectCard({ project, onSelect }: ProjectCardProps) {
               onError={() => setVideoError(true)}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            {/* Top gradient for badge contrast */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 pointer-events-none" />
             
             {/* Video Live Badge */}
-            <div className="absolute bottom-3 left-3">
+            <div className="absolute bottom-3 left-3 z-10">
               <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
                 <Video className="w-3 h-3 text-red-400" />
@@ -106,15 +104,13 @@ export default function ProjectCard({ project, onSelect }: ProjectCardProps) {
             </div>
           </div>
         ) : hasImage ? (
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full bg-slate-100">
             <img
               src={displayImageUrl}
               alt={project.title}
               onError={() => setImgError(true)}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            {/* Dark gradient overlay for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
           </div>
         ) : (
           /* High-aesthetic Graphic Fallback */

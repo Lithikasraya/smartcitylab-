@@ -19,6 +19,7 @@ export interface ProjectItem {
   members: string[];
   memberPhotos?: string[];
   imageUrl: string;
+  images?: string[];
   videoUrl?: string;
   demoUrl?: string;
   repoUrl?: string;
@@ -96,6 +97,7 @@ export interface BatchMember {
   name: string;
   rollNo: string;
   email: string;
+  phone?: string;
   domain: string;
   year?: string;
   branch?: string;
@@ -115,10 +117,12 @@ export interface BatchMember {
 export interface GalleryItem {
   id: string;
   title: string;
-  category: 'Lab Session' | 'Hackathons' | 'Field Testing' | 'Tech Expo';
+  category: 'Lab Session' | 'Hackathons' | 'Field Testing' | 'Tech Expo' | 'Project Showcase' | string;
   date: string;
   imageUrl: string;
   description: string;
+  projectId?: string;
+  projectTitle?: string;
 }
 
 export interface QuestItem {

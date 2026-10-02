@@ -16,7 +16,7 @@ import {
   ArrowRight, ArrowUpRight, Zap, Shield, Globe, Cpu,
   Users, BookOpen, CheckCircle, Radio, Layers, Code2, Wifi,
   Leaf, TrendingUp, Award, Activity, ExternalLink, Star,
-  BarChart3, Clock, ChevronRight, Video
+  BarChart3, Clock, ChevronRight, Video, Sparkles
 } from 'lucide-react';
 
 const LOTTIE_URL = 'https://lottie.host/d12ed86a-13b1-4922-a564-c918a129e464/jVwu7ncw6O.json';
@@ -221,7 +221,6 @@ function HomeProjectCard({ project, onSelect }: { project: ProjectItem; onSelect
               onError={() => setVideoError(true)}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/30 pointer-events-none" />
             <div className="absolute bottom-3 right-3 z-10">
               <span className="flex items-center gap-1.5 text-[9px] font-bold text-white bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/15">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> LIVE DEMO
@@ -229,14 +228,13 @@ function HomeProjectCard({ project, onSelect }: { project: ProjectItem; onSelect
             </div>
           </div>
         ) : hasImage ? (
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full bg-slate-100">
             <img
               src={displayImageUrl}
               alt={project.title}
               onError={() => setImgError(true)}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none" />
           </div>
         ) : (
           <div className={`relative w-full h-full bg-gradient-to-br ${cfg.gradient} flex items-center justify-center overflow-hidden`}>
@@ -250,9 +248,16 @@ function HomeProjectCard({ project, onSelect }: { project: ProjectItem; onSelect
         <span className="absolute bottom-3 left-3 z-10 text-[10px] font-bold text-white/95 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15 uppercase tracking-wide">
           Batch {project.batchYear}
         </span>
-        <span className="absolute top-3 right-3 z-10 flex items-center gap-1 text-[9px] font-bold text-white bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/15">
-          <CheckCircle className="w-2.5 h-2.5 text-emerald-400" /> Verified
-        </span>
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
+          {project.images && project.images.length > 0 && (
+            <span className="text-[9px] font-bold text-white bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/15">
+              +{project.images.length} Photos
+            </span>
+          )}
+          <span className="flex items-center gap-1 text-[9px] font-bold text-white bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/15">
+            <CheckCircle className="w-2.5 h-2.5 text-emerald-400" /> Verified
+          </span>
+        </div>
       </div>
 
       <div className="p-5 flex-1 flex flex-col justify-between">
@@ -691,22 +696,27 @@ export default function Home() {
 
       {/* ── Project Detail Modal ── */}
       {activeModal && (
-        <Modal isOpen={!!activeModal} onClose={() => setActiveModal(null)} title={activeModal.title}>
-          <div className="space-y-5">
+        <Modal isOpen={!!activeModal} onClose={() => setActiveModal(null)} title={activeModal.title} maxWidth="2xl">
+          <div className="space-y-5 text-left">
             <ProjectThumbnail
               imageUrl={activeModal.imageUrl}
+              images={activeModal.images}
               videoUrl={activeModal.videoUrl}
               title={activeModal.title}
               category={activeModal.category}
-              className="h-56 w-full rounded-xl overflow-hidden"
+              className="h-72 sm:h-80 w-full rounded-xl overflow-hidden"
             />
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[12px] font-semibold border border-blue-100">{activeModal.category}</span>
               <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[12px] font-medium">Batch {activeModal.batchYear}</span>
+              <span className="text-[12px] text-gray-500">• Team: <strong className="text-gray-900">{activeModal.teamName}</strong></span>
             </div>
             <p className="text-[15px] text-gray-600 leading-relaxed">{activeModal.description}</p>
-            <div className="flex flex-wrap gap-1.5">
-              {activeModal.techStack.map((t) => <span key={t} className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[12px] font-medium">{t}</span>)}
+            <div>
+              <h4 className="text-[12px] font-bold uppercase tracking-wider text-gray-400 mb-2">Technologies</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {activeModal.techStack.map((t) => <span key={t} className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[12px] font-medium">{t}</span>)}
+              </div>
             </div>
             <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
               <div>
@@ -718,6 +728,58 @@ export default function Home() {
                 {activeModal.demoUrl && <a href={activeModal.demoUrl} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-lg bg-blue-600 text-[13px] font-medium text-white hover:bg-blue-700 flex items-center gap-1.5"><ExternalLink className="w-3.5 h-3.5" /> Live Demo</a>}
               </div>
             </div>
+
+            {/* LOWER SECTION: Other Lab Projects */}
+            {approvedProjects.filter((p) => p.id !== activeModal.id).length > 0 && (
+              <div className="pt-4 border-t border-gray-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[13px] font-bold text-gray-900 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Explore Other Lab Projects</span>
+                  </h4>
+                  <span className="text-[11px] text-gray-400">Click to switch</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {approvedProjects
+                    .filter((p) => p.id !== activeModal.id)
+                    .slice(0, 4)
+                    .map((otherProj) => (
+                      <button
+                        key={otherProj.id}
+                        type="button"
+                        onClick={() => setActiveModal(otherProj)}
+                        className="p-2.5 rounded-xl border border-gray-200 hover:border-blue-500 bg-white hover:bg-blue-50/40 transition-all flex items-center gap-3 text-left group"
+                      >
+                        <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-slate-900 border border-gray-200">
+                          {otherProj.imageUrl ? (
+                            <img
+                              src={otherProj.imageUrl}
+                              alt={otherProj.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-white text-[9px] font-bold">
+                              DEMO
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider block truncate">
+                            {otherProj.category}
+                          </span>
+                          <h5 className="text-[12px] font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                            {otherProj.title}
+                          </h5>
+                          <span className="text-[11px] text-gray-500 truncate block">
+                            Batch {otherProj.batchYear} • {otherProj.teamName}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         </Modal>
       )}
