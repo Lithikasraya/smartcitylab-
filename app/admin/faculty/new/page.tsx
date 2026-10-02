@@ -39,6 +39,7 @@ function FacultyEditorContent() {
   const [department, setDepartment] = useState('Department of ECE / Smart City Lab');
   const [photoUrl, setPhotoUrl] = useState('');
   const [bio, setBio] = useState('');
+  const [isHead, setIsHead] = useState(true);
 
   // UI states
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -54,6 +55,7 @@ function FacultyEditorContent() {
       setDepartment(existingFaculty.department || '');
       setPhotoUrl(existingFaculty.photoUrl || '');
       setBio(existingFaculty.bio || '');
+      setIsHead(existingFaculty.isHead !== false);
     }
   }, [existingFaculty]);
 
@@ -99,6 +101,7 @@ function FacultyEditorContent() {
           department: department.trim(),
           photoUrl: fallbackPhoto,
           bio: bio.trim(),
+          isHead,
         });
 
         setNotification({ type: 'success', message: 'Faculty record updated and synced to Firebase Firestore!' });
@@ -109,6 +112,7 @@ function FacultyEditorContent() {
           department: department.trim(),
           photoUrl: fallbackPhoto,
           bio: bio.trim(),
+          isHead,
         });
 
         setNotification({ type: 'success', message: `Faculty mentor "${name}" added successfully!` });
@@ -255,6 +259,15 @@ function FacultyEditorContent() {
                   </button>
                 )}
               </div>
+              <div className="pt-2">
+                <input
+                  type="text"
+                  placeholder="Or paste direct image URL (https://...)"
+                  value={photoUrl}
+                  onChange={(e) => setPhotoUrl(e.target.value)}
+                  className="w-full px-3 py-1.5 text-[12px] rounded-lg border border-[#E5E7EB] bg-white text-[#0A0A0A] focus:outline-none focus:border-blue-600"
+                />
+              </div>
             </div>
           </div>
 
@@ -293,6 +306,23 @@ function FacultyEditorContent() {
             value={bio}
             onChange={(e) => setBio(e.target.value)}
           />
+
+          <label className="flex items-center gap-2.5 cursor-pointer select-none p-3 rounded-xl border border-blue-100 bg-blue-50/50 hover:bg-blue-50 transition-colors">
+            <input
+              type="checkbox"
+              checked={isHead}
+              onChange={(e) => setIsHead(e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            />
+            <div>
+              <span className="text-[13px] font-bold text-[#0A0A0A] block">
+                Showcase on Landing Page as Lab Head / Core Innovator
+              </span>
+              <span className="text-[11px] text-[#6B7280] block">
+                When enabled, this leader appears directly in the "Meet the Innovators Behind SmartCity Lab" section.
+              </span>
+            </div>
+          </label>
 
           <div className="pt-2 flex items-center justify-between border-t border-[#F3F4F6]">
             <Link href="/admin/faculty">

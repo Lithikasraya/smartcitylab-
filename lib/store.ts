@@ -126,7 +126,12 @@ export function usePortalStore() {
       };
 
       const inn = safeParse(localStorage.getItem(STORAGE_KEYS.INNOVATORS));
-      if (inn) setInnovators(inn);
+      if (inn && Array.isArray(inn) && inn.length > 0 && inn.some((i: any) => i.name?.includes('Viswam') || i.name?.includes('Revathi') || i.name?.includes('Aishwarya'))) {
+        setInnovators(inn);
+      } else {
+        setInnovators(INITIAL_INNOVATORS);
+        saveItem(STORAGE_KEYS.INNOVATORS, INITIAL_INNOVATORS);
+      }
       const p = safeParse(localStorage.getItem(STORAGE_KEYS.PROJECTS));
       if (p) setProjects(p);
       const n = safeParse(localStorage.getItem(STORAGE_KEYS.NEWS));
@@ -1301,6 +1306,17 @@ export function usePortalStore() {
     }
   };
 
+  const toggleFacultyHead = (id: string) => {
+    const updated = innovators.map((f) => (f.id === id ? { ...f, isHead: !f.isHead } : f));
+    setInnovators(updated);
+    saveItem(STORAGE_KEYS.INNOVATORS, updated);
+    const target = updated.find((f) => f.id === id);
+    if (target && isFirebaseConfigured) {
+      saveFacultyToFirestore(target).catch((e) => console.warn('Firestore faculty head toggle note:', e));
+    }
+    return target?.isHead;
+  };
+
   return {
     mounted,
     innovators,
@@ -1346,6 +1362,7 @@ export function usePortalStore() {
     addFaculty,
     updateFaculty,
     deleteFaculty,
+    toggleFacultyHead,
     addIntern,
     updateIntern,
     deleteIntern,

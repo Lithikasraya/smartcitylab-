@@ -10,7 +10,7 @@ import MemberAvatar from '@/components/shared/MemberAvatar';
 import { usePortalStore } from '@/lib/store';
 import { BatchInfo, BatchMember, LabInnovator } from '@/lib/data';
 import { parseExcelOrCsv, downloadSampleExcelTemplate, ParsedStudentRow } from '@/lib/excelHelper';
-import { uploadMediaFile } from '@/lib/mediaService';
+import { uploadMediaFile, getMediaDisplayUrl } from '@/lib/mediaService';
 import { 
   Layers, 
   Users, 
@@ -50,7 +50,8 @@ export default function AdminBatchesPage() {
     assignBatchMentor,
     addFaculty,
     updateFaculty,
-    deleteFaculty
+    deleteFaculty,
+    toggleFacultyHead
   } = usePortalStore();
 
   const [activeMainTab, setActiveMainTab] = useState<'cohorts' | 'faculty'>('cohorts');
@@ -125,6 +126,23 @@ export default function AdminBatchesPage() {
   const [facDepartment, setFacDepartment] = useState('Smart City Lab');
   const [facPhotoUrl, setFacPhotoUrl] = useState('');
   const [facBio, setFacBio] = useState('');
+  const [facIsHead, setFacIsHead] = useState(true);
+  const [isUploadingFacPhoto, setIsUploadingFacPhoto] = useState(false);
+  const facPhotoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFacPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingFacPhoto(true);
+    try {
+      const url = await uploadMediaFile(file, 'faculty/avatars');
+      setFacPhotoUrl(url);
+    } catch (err: unknown) {
+      console.warn('Faculty photo upload note:', err);
+    } finally {
+      setIsUploadingFacPhoto(false);
+    }
+  };
 
   // Active batch object
   const activeBatch = batchInfos.find((b) => b.year === selectedBatchYear) || batchInfos[0];
@@ -300,6 +318,7 @@ export default function AdminBatchesPage() {
         department: facDepartment,
         photoUrl: facPhotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(facName)}&background=2563EB&color=fff&size=128`,
         bio: facBio,
+        isHead: facIsHead,
       });
       setNotification(`Faculty "${facName}" updated.`);
       setEditingFaculty(null);
@@ -310,6 +329,7 @@ export default function AdminBatchesPage() {
         department: facDepartment || 'Smart City Lab',
         photoUrl: facPhotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(facName)}&background=2563EB&color=fff&size=128`,
         bio: facBio,
+        isHead: facIsHead,
       });
       setNotification(`Faculty mentor "${facName}" added to directory.`);
       setAddFacultyModalOpen(false);
@@ -808,35 +828,61 @@ export default function AdminBatchesPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-[#E5E7EB] flex items-center justify-end gap-2">
+                <div className="pt-4 mt-4 border-t border-[#E5E7EB] flex items-center justify-between gap-2">
                   <button
                     onClick={() => {
-                      setEditingFaculty(mentor);
-                      setFacName(mentor.name);
-                      setFacDesignation(mentor.designation);
-                      setFacDepartment(mentor.department || 'Smart City Lab');
-                      setFacPhotoUrl(mentor.photoUrl);
-                      setFacBio(mentor.bio || '');
-                      setAddFacultyModalOpen(true);
+                      const nextState = toggleFacultyHead(mentor.id);
+                      setNotification(
+                        nextState 
+                          ? `✓ "${mentor.name}" marked as Lab Head (Active on Landing Page).`
+                          : `"${mentor.name}" removed from Lab Head showcase.`
+                      );
+                      setTimeout(() => setNotification(null), 4000);
                     }}
-                    className="p-1.5 rounded text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#E5E7EB] transition-colors"
-                    title="Edit Faculty"
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 border ${
+                      mentor.isHead !== false
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                        : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-gray-800'
+                    }`}
+                    title="Toggle Lab Head showcase on Landing Page"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{mentor.isHead !== false ? '★ Head Person (On Home)' : '○ Set as Head'}</span>
                   </button>
-                  {innovators.length > 1 && (
+
+                  <div className="flex items-center gap-1">
                     <button
                       onClick={() => {
-                        if (confirm(`Remove ${mentor.name} from faculty directory?`)) {
-                          deleteFaculty(mentor.id);
-                        }
+                        setEditingFaculty(mentor);
+                        setFacName(mentor.name);
+                        setFacDesignation(mentor.designation);
+                        setFacDepartment(mentor.department || 'Smart City Lab');
+                        setFacPhotoUrl(mentor.photoUrl);
+                        setFacBio(mentor.bio || '');
+                        setFacIsHead(mentor.isHead !== false);
+                        setAddFacultyModalOpen(true);
                       }}
-                      className="p-1.5 rounded text-rose-500 hover:bg-rose-50 transition-colors"
-                      title="Delete Faculty"
+                      className="p-1.5 rounded text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#E5E7EB] transition-colors"
+                      title="Edit Faculty & Photo"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Edit3 className="w-4 h-4" />
                     </button>
-                  )}
+                    {innovators.length > 1 && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`Remove ${mentor.name} from faculty directory?`)) {
+                            deleteFaculty(mentor.id);
+                            setNotification(`Removed ${mentor.name} from faculty directory.`);
+                            setTimeout(() => setNotification(null), 3500);
+                          }
+                        }}
+                        className="p-1.5 rounded text-rose-500 hover:bg-rose-50 transition-colors"
+                        title="Delete Faculty"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </Card>
             ))}
@@ -1477,12 +1523,56 @@ export default function AdminBatchesPage() {
             />
           </div>
 
-          <Input
-            label="Profile Photo URL (Optional)"
-            placeholder="https://... or leave empty for auto-generated avatar"
-            value={facPhotoUrl}
-            onChange={(e) => setFacPhotoUrl(e.target.value)}
-          />
+          {/* Faculty Photo Upload & Preview */}
+          <div className="p-3.5 rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-200 border border-slate-300 shrink-0 flex items-center justify-center">
+                {facPhotoUrl ? (
+                  <img src={getMediaDisplayUrl(facPhotoUrl)} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-8 h-8 text-slate-400" />
+                )}
+              </div>
+              <div className="space-y-1 flex-1">
+                <div className="text-[13px] font-semibold text-[#0A0A0A]">Profile Portrait Photo</div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="file"
+                    ref={facPhotoInputRef}
+                    onChange={handleFacPhotoUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => facPhotoInputRef.current?.click()}
+                    disabled={isUploadingFacPhoto}
+                    icon={isUploadingFacPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                  >
+                    {isUploadingFacPhoto ? 'Uploading...' : facPhotoUrl ? 'Change Photo' : 'Upload Image'}
+                  </Button>
+                  {facPhotoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setFacPhotoUrl('')}
+                      className="text-[12px] text-red-600 hover:underline font-semibold"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <Input
+              label="Or Paste Direct Image URL"
+              placeholder="https://... or upload above"
+              value={facPhotoUrl}
+              onChange={(e) => setFacPhotoUrl(e.target.value)}
+            />
+          </div>
 
           <Textarea
             label="Biography / Research Focus"
@@ -1491,6 +1581,23 @@ export default function AdminBatchesPage() {
             onChange={(e) => setFacBio(e.target.value)}
             rows={3}
           />
+
+          <label className="flex items-center gap-2.5 cursor-pointer select-none p-3 rounded-xl border border-blue-100 bg-blue-50/50 hover:bg-blue-50 transition-colors">
+            <input
+              type="checkbox"
+              checked={facIsHead}
+              onChange={(e) => setFacIsHead(e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            />
+            <div>
+              <span className="text-[13px] font-bold text-[#0A0A0A] block">
+                Showcase on Landing Page as Lab Head / Core Innovator
+              </span>
+              <span className="text-[11px] text-[#6B7280] block">
+                When enabled, this leader appears directly in the "Meet the Innovators Behind SmartCity Lab" section.
+              </span>
+            </div>
+          </label>
 
           <div className="pt-2 flex justify-end gap-3 border-t border-[#E5E7EB]">
             <Button type="button" variant="outline" onClick={() => setAddFacultyModalOpen(false)}>

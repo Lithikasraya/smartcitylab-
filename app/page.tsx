@@ -9,8 +9,9 @@ import Footer from '@/components/shared/Footer';
 import Modal from '@/components/shared/Modal';
 import MemberAvatar from '@/components/shared/MemberAvatar';
 import ProjectThumbnail from '@/components/shared/ProjectThumbnail';
+import WhatWeBuildVisual from '@/components/shared/WhatWeBuildVisual';
 import { usePortalStore } from '@/lib/store';
-import { ProjectItem } from '@/lib/data';
+import { ProjectItem, INITIAL_INNOVATORS } from '@/lib/data';
 import { getMediaDisplayUrl, getYouTubeEmbedUrl } from '@/lib/mediaService';
 import {
   ArrowRight, ArrowUpRight, Zap, Shield, Globe, Cpu,
@@ -295,7 +296,7 @@ function HomeProjectCard({ project, onSelect }: { project: ProjectItem; onSelect
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Home() {
-  const { projects, news, batches, teams, quests } = usePortalStore();
+  const { projects, news, batches, teams, quests, innovators } = usePortalStore();
   const [activeModal, setActiveModal] = useState<ProjectItem | null>(null);
 
   // Real data computed from store
@@ -308,6 +309,12 @@ export default function Home() {
   const featuredProjects = approvedProjects.slice(0, 6);
   const recentNews       = news.filter((n) => n.isVisible !== false && n.status === 'approved').slice(0, 3);
   const featuredStudents = batches.filter((s) => s.status === 'active').slice(0, 6);
+
+  // Only display leaders marked as Head / Core Innovators
+  const headInnovators = (innovators && innovators.length > 0 ? innovators : INITIAL_INNOVATORS).filter(
+    (f) => f.isHead === true || (f.isHead === undefined && !f.name.toLowerCase().includes('demo') && !f.name.toLowerCase().includes('abhishek'))
+  );
+  const displayInnovators = headInnovators.length > 0 ? headInnovators : INITIAL_INNOVATORS;
 
   // Scroll animation refs
   const featRef  = useRef<HTMLDivElement>(null);
@@ -444,17 +451,31 @@ export default function Home() {
       ══════════════════════════════════════════════════════════════════ */}
       <section className="py-24 bg-white" ref={featRef}>
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <motion.div variants={stagger} initial="hidden" animate={featInView ? 'visible' : 'hidden'} className="mb-14">
-            <motion.span variants={fadeUp} className="inline-flex items-center gap-1.5 text-[12px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">
-              <Zap className="w-3 h-3" /> What We Build
-            </motion.span>
-            <motion.h2 variants={fadeUp} className="text-[34px] sm:text-[42px] font-black tracking-tight text-gray-900 mt-4 mb-4 leading-[1.1]">
-              Research that ships<br />
-              <span className="font-light text-gray-400">beyond the classroom.</span>
-            </motion.h2>
-            <motion.p variants={fadeUp} className="text-[16px] text-gray-500 max-w-xl">
-              Every project here is deployed, measured, and iterated by student teams with real mentorship.
-            </motion.p>
+          <motion.div 
+            variants={stagger} 
+            initial="hidden" 
+            animate={featInView ? 'visible' : 'hidden'} 
+            className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6"
+          >
+            <div className="max-w-2xl text-left">
+              <motion.span variants={fadeUp} className="inline-flex items-center gap-1.5 text-[12px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">
+                <Zap className="w-3 h-3" /> What We Build
+              </motion.span>
+              <motion.h2 variants={fadeUp} className="text-[34px] sm:text-[42px] font-black tracking-tight text-gray-900 mt-4 mb-4 leading-[1.1]">
+                Research that ships<br />
+                <span className="font-light text-gray-400">beyond the classroom.</span>
+              </motion.h2>
+              <motion.p variants={fadeUp} className="text-[16px] text-gray-500 max-w-xl leading-relaxed">
+                Every project here is deployed, measured, and iterated by student teams with real mentorship.
+              </motion.p>
+            </div>
+
+            <motion.div 
+              variants={fadeUp}
+              className="flex items-center justify-center md:justify-end shrink-0"
+            >
+              <WhatWeBuildVisual className="w-48 sm:w-56 md:w-64 lg:w-72" />
+            </motion.div>
           </motion.div>
 
           <motion.div
@@ -576,7 +597,7 @@ export default function Home() {
                 { bg: 'bg-blue-600', icon: Cpu,        num: String(approvedProjects.length) + '+', label: 'Projects Shipped',      dark: true },
                 { bg: 'bg-gray-900', icon: Users,      num: String(totalStudents) + '+',            label: 'Active Researchers',    dark: true },
                 { bg: 'bg-emerald-50 border border-emerald-100', icon: TrendingUp, num: String(liveDeployments), label: 'Live Deployments', dark: false },
-                { bg: 'bg-violet-50 border border-violet-100',   icon: Star,       num: 'A+',                    label: 'NAAC Lab Grade',   dark: false },
+                { bg: 'bg-violet-50 border border-violet-100',   icon: Wifi,       num: '24/7',                  label: 'Active IoT Telemetry', dark: false },
               ].map((cell, i) => (
                 <div key={i} className={`${cell.bg} rounded-2xl p-6 flex flex-col gap-3 ${cell.dark ? 'shadow-lg' : ''}`}>
                   <cell.icon className={`w-6 h-6 ${cell.dark ? 'text-white/80' : 'text-gray-600'}`} />
@@ -629,34 +650,68 @@ export default function Home() {
       )}
 
       {/* ══════════════════════════════════════════════════════════════════
-          TEAM SHOWCASE
+          INNOVATORS & LEADERSHIP SHOWCASE (HEAD PEOPLE ONLY)
       ══════════════════════════════════════════════════════════════════ */}
-      {featuredStudents.length > 0 && (
+      {displayInnovators && displayInnovators.length > 0 && (
         <section className="py-24 bg-white" ref={studRef}>
           <div className="max-w-7xl mx-auto px-5 sm:px-8">
-            <div className="text-center mb-12">
-              <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">
+            <div className="text-center mb-14">
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full mb-3">
                 <Users className="w-3 h-3" /> The Team
               </span>
-              <h2 className="text-[32px] font-black tracking-tight text-gray-900 mt-4 mb-3">Built by students.<br /><span className="font-light text-gray-400">Guided by mentors.</span></h2>
+              <h2 className="text-[32px] sm:text-[40px] font-black tracking-tight text-gray-900 leading-tight">
+                Meet the Innovators Behind <span className="text-blue-600">SmartCity</span> <span className="text-rose-600">Lab</span>
+              </h2>
+              <p className="text-[15px] text-gray-500 mt-2">
+                Built by students. Guided by mentors.
+              </p>
             </div>
-            <motion.div variants={stagger} initial="hidden" animate={studInView ? 'visible' : 'hidden'} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {featuredStudents.map((student) => (
-                <motion.div key={student.id} variants={fadeUp} className="bg-white rounded-2xl border border-gray-100 p-5 card-shadow hover:card-shadow-hover hover:-translate-y-1 transition-all duration-200 text-center">
-                  <div className="mx-auto w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mb-3">
-                    <span className="text-[16px] font-black text-blue-700">{student.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}</span>
+
+            <motion.div 
+              variants={stagger} 
+              initial="hidden" 
+              animate={studInView ? 'visible' : 'hidden'} 
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 max-w-5xl mx-auto items-start justify-center"
+            >
+              {displayInnovators.map((innovator) => (
+                <motion.div 
+                  key={innovator.id} 
+                  variants={fadeUp} 
+                  className="flex flex-col items-center text-center group cursor-pointer"
+                >
+                  <div className="w-full aspect-[4/5] sm:aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200/80 shadow-[0_4px_16px_rgba(0,0,0,0.06)] group-hover:shadow-[0_8px_24px_rgba(37,99,235,0.15)] group-hover:-translate-y-1 transition-all duration-300 relative flex items-center justify-center mb-3">
+                    {innovator.photoUrl ? (
+                      <img
+                        src={getMediaDisplayUrl(innovator.photoUrl)}
+                        alt={innovator.name}
+                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-700 flex flex-col items-center justify-center text-white p-3">
+                        <span className="text-[26px] font-black tracking-wider">
+                          {innovator.name
+                            .replace(/^(Mr\.|Ms\.|Dr\.)\s*/, '')
+                            .split(' ')
+                            .map((n: string) => n[0])
+                            .join('')
+                            .slice(0, 2)
+                            .toUpperCase()}
+                        </span>
+                        <span className="text-[10px] font-medium text-blue-100 mt-1 uppercase tracking-wider">
+                          {innovator.designation}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <div className="font-bold text-[12px] text-gray-900 truncate">{student.name}</div>
-                  {student.isTeamLead && <span className="mt-1 inline-block text-[9px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded uppercase tracking-wide">Lead</span>}
-                  <div className="text-[10px] text-gray-400 mt-1 font-mono truncate">{student.rollNo}</div>
+                  <h3 className="font-bold text-[14px] sm:text-[15px] text-gray-900 leading-snug group-hover:text-blue-600 transition-colors">
+                    {innovator.name}
+                  </h3>
+                  <p className="text-[12px] text-gray-500 font-medium italic mt-0.5">
+                    {innovator.designation}
+                  </p>
                 </motion.div>
               ))}
             </motion.div>
-            <div className="text-center mt-8">
-              <Link href="/batches" className="inline-flex items-center gap-2 px-6 py-2.5 border border-gray-200 rounded-xl text-[14px] font-semibold text-gray-700 hover:bg-gray-50 transition-all">
-                View All Batches <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
           </div>
         </section>
       )}

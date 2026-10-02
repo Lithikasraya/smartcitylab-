@@ -5,6 +5,7 @@ export interface LabInnovator {
   department?: string;
   photoUrl: string;
   bio?: string;
+  isHead?: boolean;
 }
 
 export interface ProjectItem {
@@ -192,7 +193,53 @@ export interface SubmissionItem {
 }
 
 // ── Clean empty initial states (No mock/fake data) ──
-export const INITIAL_INNOVATORS: LabInnovator[] = [];
+export const INITIAL_INNOVATORS: LabInnovator[] = [
+  {
+    id: 'innovator-p-viswam',
+    name: 'Mr. P. Viswam',
+    designation: 'Chairman',
+    department: 'Smart City Lab Leadership',
+    photoUrl: '',
+    bio: 'Visionary leadership and institutional mentorship driving the mission of Smart City Lab.',
+    isHead: true,
+  },
+  {
+    id: 'innovator-aishwarya',
+    name: 'Ms. Aishwarya',
+    designation: 'Director',
+    department: 'Smart City Lab Leadership',
+    photoUrl: '',
+    bio: 'Directing strategy, interdisciplinary partnerships, and innovation roadmaps.',
+    isHead: true,
+  },
+  {
+    id: 'innovator-d-revathi',
+    name: 'Dr. D Revathi',
+    designation: 'Director',
+    department: 'Smart City Lab Research',
+    photoUrl: '',
+    bio: 'Leading research architecture, academic mentoring, and student project governance.',
+    isHead: true,
+  },
+  {
+    id: 'innovator-satya-pratap',
+    name: 'Dr. Satya Pratap',
+    designation: 'Asst. Professor',
+    department: 'Smart City Lab Faculty',
+    photoUrl: '',
+    bio: 'Mentoring embedded computing, edge AI hardware pipelines, and research documentation.',
+    isHead: true,
+  },
+  {
+    id: 'innovator-subhash',
+    name: 'Mr. Subhash',
+    designation: 'Asst. Professor',
+    department: 'Smart City Lab Faculty',
+    photoUrl: '',
+    bio: 'Guiding hardware prototypes, IoT sensor grids, and field trial deployments.',
+    isHead: true,
+  },
+];
 // ── Cohorts & Batches ──
 export const INITIAL_BATCH_INFOS: BatchInfo[] = [
   {
