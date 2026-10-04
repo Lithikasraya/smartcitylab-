@@ -62,11 +62,16 @@ export default function AdminLoginPage() {
         {/* Centered card with clean borders */}
         <Card className="p-8 text-left space-y-6 bg-white border border-[#E5E7EB] rounded-2xl shadow-sm">
           
-          <div className="text-center space-y-2 pb-1">
-            <Link href="/" className="inline-block text-[18px] font-bold tracking-tight text-[#0A0A0A]">
-              KIET Smart City Lab
+          <div className="text-center space-y-2 pb-1 flex flex-col items-center">
+            <Link href="/" className="inline-flex flex-col items-center gap-2">
+              <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 p-2 flex items-center justify-center shadow-xs hover:scale-105 transition-transform">
+                <img src="/smartcity-logo.png" alt="Smart City Lab" className="w-full h-full object-contain" />
+              </div>
+              <span className="text-[18px] font-bold tracking-tight text-[#0A0A0A]">
+                KIET Smart City Lab
+              </span>
             </Link>
-            <div className="flex justify-center">
+            <div className="flex justify-center pt-1">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold bg-blue-50 text-blue-600 border border-blue-200">
                 <ShieldCheck className="w-3.5 h-3.5" /> Super Admin CRM
               </span>

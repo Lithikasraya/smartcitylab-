@@ -28,6 +28,7 @@ export default function AdminTeamsPage() {
     user, 
     teams, 
     batches,
+    batchInfos,
     createTeam, 
     updateTeamColor, 
     markAttendance,
@@ -722,7 +723,7 @@ export default function AdminTeamsPage() {
             </div>
             <button
               type="button"
-              onClick={() => downloadSampleExcelTemplate('team')}
+              onClick={() => downloadSampleExcelTemplate('team', batchInfos)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-blue-300 text-[12px] font-semibold text-blue-700 hover:bg-blue-50 transition-colors whitespace-nowrap shadow-sm"
             >
               <Download className="w-3.5 h-3.5" />

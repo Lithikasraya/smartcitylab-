@@ -34,8 +34,11 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         
         {/* Brand logo & team badge */}
         <div className="flex items-center gap-3">
-          <Link href="/" className="text-[17px] font-bold text-[#0A0A0A] tracking-tight">
-            KIET Smart City Lab
+          <Link href="/" className="flex items-center gap-2 text-[17px] font-bold text-[#0A0A0A] tracking-tight">
+            <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 p-0.5 flex items-center justify-center shrink-0">
+              <img src="/smartcity-logo.png" alt="Smart City Lab" className="w-full h-full object-contain" />
+            </div>
+            <span>KIET Smart City Lab</span>
           </Link>
           <span className="hidden sm:inline-block px-2.5 py-0.5 rounded text-[12px] font-medium border border-[#E5E7EB] bg-[#F8F9FA] text-[#2563EB]">
             {user.teamName || 'Team CyberVision'}

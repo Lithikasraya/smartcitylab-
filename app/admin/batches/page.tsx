@@ -528,12 +528,20 @@ export default function AdminBatchesPage() {
                       </span>
 
                       <div className="inline-flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => setEditingBatch(b)}
+                          className="p-1.5 rounded text-[#6B7280] hover:text-[#2563EB] hover:bg-blue-50 transition-colors"
+                          title="Edit Cohort Details"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
                         <Link
                           href={`/admin/batches/new?id=${b.id}`}
                           className="p-1.5 rounded text-[#6B7280] hover:text-[#0A0A0A] hover:bg-[#E5E7EB] transition-colors"
-                          title="Edit Batch Info"
+                          title="Full Page Editor"
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
+                          <Sparkles className="w-3.5 h-3.5" />
                         </Link>
                         {batchInfos.length > 1 && (
                           <button
@@ -1339,7 +1347,7 @@ export default function AdminBatchesPage() {
               </div>
               <button
                 type="button"
-                onClick={() => downloadSampleExcelTemplate('batch')}
+                onClick={() => downloadSampleExcelTemplate('batch', batchInfos, activeBatch?.year)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-blue-300 text-[12px] font-semibold text-blue-700 hover:bg-blue-50 transition-colors whitespace-nowrap shadow-sm"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -1609,6 +1617,94 @@ export default function AdminBatchesPage() {
           </div>
         </form>
       </Modal>
+
+      {/* ======================= EDIT COHORT BATCH MODAL ======================= */}
+      {editingBatch && (
+        <Modal
+          isOpen={Boolean(editingBatch)}
+          onClose={() => setEditingBatch(null)}
+          title={`Edit Cohort: ${editingBatch.name}`}
+          maxWidth="2xl"
+        >
+          <form onSubmit={handleSaveEditBatch} className="space-y-4 text-left">
+            <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-200 text-[13px] text-blue-900">
+              Update the cohort name, session/interns info, description, or assigned faculty mentor.
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Cohort Title / Name *"
+                placeholder="e.g. CREAM LAYER – I or Batch 2026"
+                value={editingBatch.name}
+                onChange={(e) => setEditingBatch({ ...editingBatch, name: e.target.value })}
+                required
+              />
+
+              <Input
+                label="Batch / Cohort Value *"
+                placeholder="e.g. Cream Layer I or 2026"
+                value={editingBatch.year}
+                onChange={(e) => setEditingBatch({ ...editingBatch, year: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Academic Subtitle / Group"
+                placeholder="e.g. CORE GROUP (10 INTERNS) or 4TH YEARS"
+                value={editingBatch.academicSession || ''}
+                onChange={(e) => setEditingBatch({ ...editingBatch, academicSession: e.target.value })}
+              />
+
+              <div className="space-y-1.5">
+                <label className="block text-[13px] font-semibold text-[#0A0A0A]">Cohort Status</label>
+                <select
+                  value={editingBatch.status}
+                  onChange={(e) => setEditingBatch({ ...editingBatch, status: e.target.value as BatchInfo['status'] })}
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[14px] text-[#0A0A0A] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-colors"
+                >
+                  <option value="active">Active Cohort (Ongoing Research)</option>
+                  <option value="upcoming">Upcoming Cohort (Pre-Enrollment)</option>
+                  <option value="graduated">Graduated Alumni Cohort</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-[13px] font-semibold text-[#0A0A0A]">Faculty Mentor In-Charge</label>
+              <select
+                value={editingBatch.mentorLead || ''}
+                onChange={(e) => setEditingBatch({ ...editingBatch, mentorLead: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E7EB] bg-white text-[14px] text-[#0A0A0A] focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-colors"
+              >
+                {innovators.map((f) => (
+                  <option key={f.id} value={f.name}>
+                    {f.name} ({f.designation})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <Textarea
+              label="Cohort Description / Scope"
+              placeholder="e.g. Elite Core Group driving core lab architecture, high-level research prototypes..."
+              value={editingBatch.description || ''}
+              onChange={(e) => setEditingBatch({ ...editingBatch, description: e.target.value })}
+              rows={3}
+            />
+
+            <div className="pt-2 flex justify-end gap-3 border-t border-[#E5E7EB]">
+              <Button type="button" variant="outline" onClick={() => setEditingBatch(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                Save Batch Changes
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
     </div>
   );

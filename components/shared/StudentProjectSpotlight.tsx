@@ -4,6 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import { BatchMember, ProjectItem } from '@/lib/data';
 import { getMediaDisplayUrl } from '@/lib/mediaService';
+import { Blobatar } from '@blobatar/react';
+import 'blobatar/motion.css';
 import { 
   ArrowRight, 
   GraduationCap,
@@ -95,24 +97,22 @@ export default function StudentProjectSpotlight({
                 href="/batches"
                 className="w-[200px] sm:w-[220px] rounded-3xl p-5 bg-gradient-to-b from-white to-slate-50/80 border border-slate-200/90 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.06)] hover:shadow-[0_18px_32px_-8px_rgba(37,99,235,0.22)] hover:border-blue-500/80 hover:-translate-y-2 transition-all duration-300 cursor-pointer flex flex-col items-center text-center shrink-0 select-none group/card"
               >
-                {/* Circular Face / Avatar */}
-                <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-slate-900 border-3 border-white ring-2 ring-slate-200/80 shadow-md flex items-center justify-center text-white font-black text-[20px] mb-3.5 shrink-0 group-hover/card:ring-blue-500 transition-all">
-                  {student.photoUrl && !student.photoUrl.includes('ui-avatars') ? (
+                {/* Circular Face / Avatar with Animated Blobatar Fallback */}
+                <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100/70 border-3 border-white ring-2 ring-slate-200/80 shadow-md flex items-center justify-center mb-3.5 shrink-0 group-hover/card:ring-blue-500 group-hover/card:scale-105 transition-all">
+                  {student.photoUrl && !student.photoUrl.includes('ui-avatars') && !student.photoUrl.includes('placeholder') ? (
                     <img
                       src={getMediaDisplayUrl(student.photoUrl)}
                       alt={student.name}
                       className="w-full h-full object-cover group-hover/card:scale-108 transition-transform duration-300"
                     />
                   ) : (
-                    <span>
-                      {student.name
-                        .replace(/^(Mr\.|Ms\.|Dr\.)\s*/, '')
-                        .split(' ')
-                        .map((n: string) => n[0])
-                        .join('')
-                        .slice(0, 2)
-                        .toUpperCase()}
-                    </span>
+                    <div className="w-full h-full flex items-center justify-center p-1.5 overflow-hidden">
+                      <Blobatar
+                        name={student.name || student.rollNo || 'smartcity'}
+                        animate="always"
+                        className="w-full h-full object-contain pointer-events-auto"
+                      />
+                    </div>
                   )}
                 </div>
 
@@ -151,7 +151,7 @@ export default function StudentProjectSpotlight({
         }
         .animate-train {
           display: flex;
-          animation: trainScroll 25s linear infinite;
+          animation: trainScroll 80s linear infinite;
         }
       `}</style>
 

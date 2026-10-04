@@ -2,23 +2,16 @@
 
 import React, { useState } from 'react';
 import { getMediaDisplayUrl } from '@/lib/mediaService';
+import { Blobatar } from '@blobatar/react';
+import 'blobatar/motion.css';
 
 interface MemberAvatarProps {
   name: string;
   photoUrl?: string;
   role?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   isLead?: boolean;
 }
-
-const COLOR_PALETTE = [
-  'bg-blue-600',
-  'bg-emerald-600',
-  'bg-purple-600',
-  'bg-amber-600',
-  'bg-cyan-600',
-  'bg-slate-800',
-];
 
 export default function MemberAvatar({
   name,
@@ -28,38 +21,23 @@ export default function MemberAvatar({
   isLead = false,
 }: MemberAvatarProps) {
   const displayPhotoUrl = getMediaDisplayUrl(photoUrl);
-  const [imgError, setImgError] = useState(!displayPhotoUrl);
-
-  const getInitials = (n: string) => {
-    if (!n) return 'S';
-    const parts = n.trim().split(/\s+/);
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    }
-    return n.slice(0, 2).toUpperCase();
-  };
-
-  const getHashColor = (str: string) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const idx = Math.abs(hash) % COLOR_PALETTE.length;
-    return COLOR_PALETTE[idx];
-  };
+  const hasRealPhoto =
+    !!displayPhotoUrl &&
+    !displayPhotoUrl.includes('ui-avatars') &&
+    !displayPhotoUrl.includes('placeholder');
+  const [imgError, setImgError] = useState(!hasRealPhoto);
 
   const sizeClasses = {
-    sm: 'w-6 h-6 text-[10px]',
-    md: 'w-8 h-8 text-[12px]',
+    sm: 'w-7 h-7 text-[10px]',
+    md: 'w-9 h-9 text-[12px]',
     lg: 'w-12 h-12 text-[15px]',
+    xl: 'w-20 h-20 text-[20px]',
   }[size];
-
-  const bgColor = getHashColor(name);
 
   return (
     <div
       title={`${name}${role ? ` (${role})` : ''}`}
-      className={`relative inline-flex items-center justify-center rounded-full font-bold select-none border-2 border-white shadow-xs flex-shrink-0 ${sizeClasses} ${bgColor} text-white`}
+      className={`relative inline-flex items-center justify-center rounded-full overflow-hidden select-none border-2 border-white ring-1 ring-slate-200/80 shadow-xs flex-shrink-0 bg-slate-50 transition-transform duration-200 hover:scale-105 ${sizeClasses}`}
     >
       {!imgError && displayPhotoUrl ? (
         <img
@@ -70,13 +48,19 @@ export default function MemberAvatar({
           className="w-full h-full rounded-full object-cover"
         />
       ) : (
-        <span>{getInitials(name)}</span>
+        <div className="w-full h-full flex items-center justify-center overflow-hidden p-0.5">
+          <Blobatar
+            name={name || 'student'}
+            animate="always"
+            className="w-full h-full object-contain pointer-events-auto"
+          />
+        </div>
       )}
 
       {isLead && (
         <span
           title="Team Lead"
-          className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#2563EB] border border-white rounded-full flex items-center justify-center text-[7px] text-white"
+          className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#2563EB] border border-white rounded-full flex items-center justify-center text-[8px] text-white z-10 font-bold shadow-xs"
         >
           ★
         </span>

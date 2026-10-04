@@ -96,13 +96,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="w-full md:w-64 bg-white border-r border-[#E5E7EB] flex flex-col md:h-screen md:sticky md:top-0 z-30">
         
         {/* Brand / Logo */}
-        <div className="p-6 border-b border-[#E5E7EB]">
-          <Link href="/" className="block">
-            <span className="text-[17px] font-bold tracking-tight text-[#0A0A0A]">
-              KIET Smart City Lab
-            </span>
+        <div className="p-5 border-b border-[#E5E7EB]">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 p-1 flex items-center justify-center shrink-0">
+              <img src="/smartcity-logo.png" alt="Smart City Lab" className="w-full h-full object-contain" />
+            </div>
+            <div>
+              <span className="text-[16px] font-bold tracking-tight text-[#0A0A0A] block leading-tight">
+                KIET Smart City Lab
+              </span>
+            </div>
           </Link>
-          <div className="flex items-center gap-1.5 mt-2">
+          <div className="flex items-center gap-1.5 mt-3">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-50 border border-blue-200 text-blue-600">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
               Super Admin Console

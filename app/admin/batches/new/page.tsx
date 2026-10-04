@@ -210,18 +210,66 @@ function BatchEditorContent() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="p-6 sm:p-7 space-y-5 border-[#E5E7EB]">
           
-          {/* Year Quick Selector */}
+          {/* Cohort Presets Selector */}
           <div className="space-y-2">
             <label className="block text-[13px] font-semibold text-[#0A0A0A]">
-              Quick Select Batch Year
+              Quick Presets / Templates
             </label>
             <div className="flex flex-wrap gap-2">
-              {COHORT_YEARS.map((y) => (
+              <button
+                type="button"
+                onClick={() => {
+                  setName('CREAM LAYER – I');
+                  setYear('Cream Layer I');
+                  setAcademicSession('CORE GROUP (10 INTERNS)');
+                  setDescription('Elite Core Group driving core lab architecture, high-level research prototypes, and system integrations.');
+                }}
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-bold border transition-all ${
+                  year === 'Cream Layer I'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:text-[#0A0A0A] hover:bg-gray-50'
+                }`}
+              >
+                Cream Layer I (Core)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setName('CREAM LAYER – II');
+                  setYear('Cream Layer II');
+                  setAcademicSession('4TH YEARS (06 INTERNS)');
+                  setDescription('Final year senior research interns leading hardware deployments, testing protocols, and mentorship.');
+                }}
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-bold border transition-all ${
+                  year === 'Cream Layer II'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:text-[#0A0A0A] hover:bg-gray-50'
+                }`}
+              >
+                Cream Layer II (4th Yr)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setName('CREAM LAYER – III');
+                  setYear('Cream Layer III');
+                  setAcademicSession('3RD YEARS (13 INTERNS)');
+                  setDescription('Pre-final year research interns focusing on sensor grids, edge AI pipelines, and embedded software.');
+                }}
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-bold border transition-all ${
+                  year === 'Cream Layer III'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:text-[#0A0A0A] hover:bg-gray-50'
+                }`}
+              >
+                Cream Layer III (3rd Yr)
+              </button>
+              {COHORT_YEARS.slice(0, 4).map((y) => (
                 <button
                   key={y}
                   type="button"
                   onClick={() => handleYearSelect(y)}
-                  className={`px-3.5 py-1.5 rounded-lg text-[13px] font-bold border transition-all ${
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-bold border transition-all ${
                     year === y
                       ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                       : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:text-[#0A0A0A] hover:bg-gray-50'

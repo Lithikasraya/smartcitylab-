@@ -43,11 +43,20 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-5 sm:px-8">
         <div className="flex items-center justify-between h-16">
 
-          {/* ── Logo (text only) ── */}
-          <Link href="/" className="group shrink-0">
-            <span className="font-black text-[15px] tracking-tight text-gray-900 group-hover:text-blue-600 transition-colors uppercase">
-              KIET <span className="text-blue-600">SmartCity Lab</span>
-            </span>
+          {/* ── Official Smart City Lab Logo ── */}
+          <Link href="/" className="group flex items-center gap-2.5 shrink-0 select-none">
+            <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shadow-xs group-hover:scale-105 group-hover:border-blue-500/80 transition-all duration-200">
+              <img
+                src="/smartcity-logo.png"
+                alt="KIET Smart City Lab Logo"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="font-black text-[16px] tracking-tight text-gray-900 group-hover:text-blue-600 transition-colors uppercase leading-tight">
+                KIET <span className="text-blue-600">SmartCity Lab</span>
+              </span>
+            </div>
           </Link>
 
           {/* ── Desktop Nav ── */}

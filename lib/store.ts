@@ -203,7 +203,7 @@ export function usePortalStore() {
       }
 
       const bi = safeParse(localStorage.getItem(STORAGE_KEYS.BATCH_INFOS));
-      if (bi && Array.isArray(bi) && bi.length > 0 && bi.some((item: any) => item.name?.includes('CREAM LAYER') || item.year?.includes('Cream Layer'))) {
+      if (bi && Array.isArray(bi) && bi.length > 0) {
         const filtered = bi.filter((item: any) => !isTombstoned(item.id));
         setBatchInfos(filtered.length > 0 ? filtered : INITIAL_BATCH_INFOS);
       } else {
@@ -1055,7 +1055,7 @@ export function usePortalStore() {
         domain: s.domain || 'IoT & Embedded Systems',
         year: s.year || '3rd Year',
         branch: s.branch || 'CSE',
-        batchYear: (s.batchYear as string) || '2026',
+        batchYear: (s.batchYear as string) || (batchInfos[0]?.year || 'Cream Layer I'),
         teamName,
         isTeamLead: isLead,
         role,

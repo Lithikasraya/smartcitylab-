@@ -8,6 +8,7 @@ import { Input } from '@/components/shared/Input';
 import Modal from '@/components/shared/Modal';
 import { usePortalStore } from '@/lib/store';
 import { BatchMember } from '@/lib/data';
+import MemberAvatar from '@/components/shared/MemberAvatar';
 import { parseExcelOrCsv, downloadSampleExcelTemplate, ParsedStudentRow } from '@/lib/excelHelper';
 import { uploadMediaFile } from '@/lib/mediaService';
 import { 
@@ -473,14 +474,11 @@ export default function AdminStudentsCRMPage() {
                       {/* Student Info */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={student.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=2563EB&color=fff&size=128`}
-                            alt={student.name}
-                            className="w-9 h-9 rounded-full object-cover border border-[#E5E7EB] flex-shrink-0"
-                            referrerPolicy="no-referrer"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=2563EB&color=fff&size=128`;
-                            }}
+                          <MemberAvatar
+                            name={student.name}
+                            photoUrl={student.photoUrl}
+                            size="md"
+                            isLead={currentRole === 'Team Lead'}
                           />
                           <div>
                             <div className="font-semibold text-[#0A0A0A] flex items-center gap-1.5">
@@ -960,7 +958,7 @@ export default function AdminStudentsCRMPage() {
             </div>
             <button
               type="button"
-              onClick={() => downloadSampleExcelTemplate('general')}
+              onClick={() => downloadSampleExcelTemplate('general', batchInfos)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-blue-300 text-[12px] font-semibold text-blue-700 hover:bg-blue-50 transition-colors whitespace-nowrap shadow-sm"
             >
               <Download className="w-3.5 h-3.5" />

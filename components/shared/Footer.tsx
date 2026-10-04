@@ -22,8 +22,8 @@ const NAV = {
   ],
   Lab: [
     { label: 'About the Lab', href: '/' },
-    { label: 'Student Portal', href: '/student/dashboard' },
-    { label: 'Admin Login', href: '/admin' },
+    { label: 'Innovators & Faculty', href: '/batches' },
+    { label: 'Research Infrastructure', href: '/gallery' },
     { label: 'Contact Us', href: '/' },
   ],
 };
@@ -44,13 +44,19 @@ export default function Footer() {
 
           {/* Brand */}
           <div className="md:col-span-2 space-y-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-blue-600 rounded-[10px] flex items-center justify-center shadow-[0_2px_8px_rgba(37,99,235,0.5)]">
-                <Zap className="w-4 h-4 text-white fill-white" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white rounded-xl p-1 flex items-center justify-center shadow-sm shrink-0">
+                <img
+                  src="/smartcity-logo.png"
+                  alt="KIET Smart City Lab Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <span className="font-bold text-[16px] text-white">
-                KIET <span className="text-blue-500">Smart City Lab</span>
-              </span>
+              <div className="flex flex-col">
+                <span className="font-bold text-[17px] text-white leading-tight">
+                  KIET <span className="text-blue-500">Smart City Lab</span>
+                </span>
+              </div>
             </div>
             <p className="text-[14px] text-gray-400 leading-relaxed max-w-sm">
               {contactSettings?.address ? `${contactSettings.address}. We design, build, and deploy intelligent urban systems.` : 'A Center of Excellence at KIET Group of Institutions. We design, build, and deploy intelligent urban systems — from IoT sensor networks to autonomous energy grids.'}
@@ -91,9 +97,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[13px] text-gray-500">
           <div className="flex items-center gap-3">
-            <span>© {new Date().getFullYear()} KIET Smart City Lab.</span>
-            <span className="hidden sm:inline text-gray-700">·</span>
-            <span className="hidden sm:inline">Innovation Block C, Ghaziabad 201206</span>
+            <span>© {new Date().getFullYear()} KIET Smart City Lab. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/" className="hover:text-gray-300 transition-colors">Privacy</Link>

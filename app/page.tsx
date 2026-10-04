@@ -586,7 +586,7 @@ export default function Home() {
                   'Structured mentorship from faculty & industry experts',
                   'Full project management portal — task boards, video demos, git sync',
                   'Verified projects published on the public showcase',
-                  'Recognized by MIC India & Smart Cities Mission',
+                  'Real-world IoT sensor grids & campus deployments',
                 ].map((text, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
@@ -596,7 +596,7 @@ export default function Home() {
               </div>
               <div className="flex gap-3">
                 <Link href="/batches" className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold text-[14px] rounded-xl hover:bg-blue-700 shadow-[0_2px_8px_rgba(37,99,235,0.3)] transition-all">
-                  Join the Lab <ArrowRight className="w-4 h-4" />
+                  Explore Cohorts & Students <ArrowRight className="w-4 h-4" />
                 </Link>
                 <a href={`mailto:${contactEmail}`} className="flex items-center gap-2 px-5 py-2.5 border border-gray-200 text-gray-700 font-semibold text-[14px] rounded-xl hover:bg-gray-50 transition-all">
                   Contact Us

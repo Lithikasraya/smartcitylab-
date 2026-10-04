@@ -1,5 +1,4 @@
 import * as XLSX from 'xlsx';
-import { BatchMember } from './data';
 
 export interface ParsedStudentRow {
   name: string;
@@ -114,11 +113,16 @@ export async function parseExcelOrCsv(file: File): Promise<ParsedStudentRow[]> {
     }
 
     const batchYear =
-      normalized['batch'] ||
+      normalized['batchcohort'] ||
       normalized['batchyear'] ||
+      normalized['batch'] ||
       normalized['cohort'] ||
+      normalized['cohortname'] ||
+      normalized['creamlayer'] ||
+      normalized['creamlayercohort'] ||
+      normalized['layer'] ||
       normalized['passoutyear'] ||
-      '2026';
+      'Cream Layer I';
 
     const rawSkills =
       normalized['skills'] ||
@@ -163,17 +167,30 @@ export async function parseExcelOrCsv(file: File): Promise<ParsedStudentRow[]> {
 }
 
 /**
- * Downloads a sample Excel (.xlsx) template for student roster importing
+ * Downloads a sample Excel (.xlsx) template for student roster importing,
+ * dynamically populated with the lab's actual cohorts/batches.
  */
-export function downloadSampleExcelTemplate(templateType: 'general' | 'batch' | 'team' = 'general') {
+export function downloadSampleExcelTemplate(
+  templateType: 'general' | 'batch' | 'team' = 'general',
+  batchList?: { name: string; year: string; academicSession?: string }[],
+  targetBatchYear?: string
+) {
+  const b1 = batchList?.[0]?.year || 'Cream Layer I';
+  const b2 = batchList?.[1]?.year || 'Cream Layer II';
+  const b3 = batchList?.[2]?.year || 'Cream Layer III';
+  
+  const chosenBatch1 = targetBatchYear || b1;
+  const chosenBatch2 = targetBatchYear || b2;
+  const chosenBatch3 = targetBatchYear || b3;
+
   const sampleData = [
     {
       'Name': 'Aarav Sharma',
       'Roll No': '2200290100012',
       'Email': 'aarav.sharma@kiet.edu',
       'Phone Number': '+91 98765 43210',
-      'Batch Year': '2026',
-      'Academic Year': '3rd Year',
+      'Batch / Cohort': chosenBatch1,
+      'Academic Year': '4th Year',
       'Branch': 'CSE',
       'Domain': 'AI & Computer Vision',
       'Role': 'Team Lead',
@@ -187,8 +204,8 @@ export function downloadSampleExcelTemplate(templateType: 'general' | 'batch' | 
       'Roll No': '2200290100045',
       'Email': 'rohan.verma@kiet.edu',
       'Phone Number': '+91 98123 45678',
-      'Batch Year': '2026',
-      'Academic Year': '3rd Year',
+      'Batch / Cohort': chosenBatch2,
+      'Academic Year': '4th Year',
       'Branch': 'ECE',
       'Domain': 'IoT & Sensors',
       'Role': 'Student',
@@ -202,8 +219,8 @@ export function downloadSampleExcelTemplate(templateType: 'general' | 'batch' | 
       'Roll No': '2300290100088',
       'Email': 'sneha.patel@kiet.edu',
       'Phone Number': '+91 99887 76655',
-      'Batch Year': '2026',
-      'Academic Year': '2nd Year',
+      'Batch / Cohort': chosenBatch3,
+      'Academic Year': '3rd Year',
       'Branch': 'IT',
       'Domain': 'Web & Cloud',
       'Role': 'Student',
@@ -217,8 +234,8 @@ export function downloadSampleExcelTemplate(templateType: 'general' | 'batch' | 
       'Roll No': '2300290100104',
       'Email': 'vikram.aditya@kiet.edu',
       'Phone Number': '+91 97654 32109',
-      'Batch Year': '2027',
-      'Academic Year': '2nd Year',
+      'Batch / Cohort': chosenBatch3,
+      'Academic Year': '3rd Year',
       'Branch': 'Mechanical',
       'Domain': 'Robotics & 3D Prototyping',
       'Role': 'Student',
@@ -239,7 +256,7 @@ export function downloadSampleExcelTemplate(templateType: 'general' | 'batch' | 
     { wch: 18 }, // Roll No
     { wch: 28 }, // Email
     { wch: 18 }, // Phone Number
-    { wch: 12 }, // Batch Year
+    { wch: 18 }, // Batch / Cohort
     { wch: 15 }, // Academic Year
     { wch: 14 }, // Branch
     { wch: 26 }, // Domain
@@ -250,5 +267,21 @@ export function downloadSampleExcelTemplate(templateType: 'general' | 'batch' | 
     { wch: 32 }, // LinkedIn
   ];
 
-  XLSX.writeFile(workbook, `SCL_Students_Template_${templateType}.xlsx`);
+  // Optional: Add a second sheet listing available cohorts
+  if (batchList && batchList.length > 0) {
+    const cohortsReferenceData = batchList.map((b) => ({
+      'Cohort Name': b.name,
+      'Value to use in Excel ("Batch / Cohort")': b.year,
+      'Academic Session / Subtitle': b.academicSession || 'Active Research Cohort',
+    }));
+    const refWorksheet = XLSX.utils.json_to_sheet(cohortsReferenceData);
+    refWorksheet['!cols'] = [{ wch: 26 }, { wch: 36 }, { wch: 35 }];
+    XLSX.utils.book_append_sheet(workbook, refWorksheet, 'Cohorts_Reference');
+  }
+
+  const filename = templateType === 'batch' && targetBatchYear
+    ? `SCL_Students_Template_${targetBatchYear.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`
+    : `SCL_Students_Template_${templateType}.xlsx`;
+
+  XLSX.writeFile(workbook, filename);
 }
