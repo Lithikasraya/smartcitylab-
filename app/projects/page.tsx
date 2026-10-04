@@ -36,7 +36,7 @@ export default function ProjectsPage() {
   const batches = ['All', '2026', '2025', '2024'];
 
   const approvedProjects = projects.filter(
-    (p) => (p.isVisible !== false) && (p.status === 'approved')
+    (p) => p.isVisible !== false && p.status !== 'rejected' && p.status !== 'pending'
   );
 
   const filteredProjects = approvedProjects.filter((p) => {

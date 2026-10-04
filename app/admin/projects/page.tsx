@@ -73,7 +73,7 @@ export default function AdminProjectsPage() {
 
     const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
     const matchesBatch = batchFilter === 'all' || p.batchYear === batchFilter;
-    const isLive = p.isVisible !== false && p.status === 'approved';
+    const isLive = p.isVisible !== false && p.status !== 'rejected' && p.status !== 'pending';
     const matchesVisibility = 
       visibilityFilter === 'all' ? true :
       visibilityFilter === 'live' ? isLive :
@@ -168,7 +168,7 @@ export default function AdminProjectsPage() {
         <Card className="p-4.5 border-[#E5E7EB]">
           <div className="text-[12px] font-semibold text-emerald-600">Live on Showcase</div>
           <div className="text-[24px] font-black text-emerald-700 mt-1">
-            {projects.filter((p) => p.isVisible !== false && p.status === 'approved').length}
+            {projects.filter((p) => p.isVisible !== false && p.status !== 'rejected' && p.status !== 'pending').length}
           </div>
         </Card>
         <Card className="p-4.5 border-[#E5E7EB]">

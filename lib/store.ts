@@ -268,10 +268,36 @@ export function usePortalStore() {
               }
               return true;
             });
-            setProjects(clean);
-            saveItem(STORAGE_KEYS.PROJECTS, clean);
+            if (clean.length > 0) {
+              setProjects(clean);
+              saveItem(STORAGE_KEYS.PROJECTS, clean);
+            }
           }
         });
+
+        // Backup backend API fetch for projects
+        fetch('/api/projects')
+          .then((r) => r.json())
+          .then((res) => {
+            if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+              const clean = res.data.filter((p: any) => !isTombstoned(p.id));
+              if (clean.length > 0) {
+                setProjects((prev) => {
+                  const map = new Map();
+                  clean.forEach((item: any) => map.set(item.id, item));
+                  prev.forEach((item: any) => {
+                    if (!map.has(item.id) && !isTombstoned(item.id)) {
+                      map.set(item.id, item);
+                    }
+                  });
+                  const combined = Array.from(map.values());
+                  saveItem(STORAGE_KEYS.PROJECTS, combined);
+                  return combined;
+                });
+              }
+            }
+          })
+          .catch(() => {});
 
         const unsubBatches = subscribeToBatches((firestoreBatches) => {
           if (firestoreBatches && Array.isArray(firestoreBatches)) {
@@ -827,7 +853,8 @@ export function usePortalStore() {
     const newProj: ProjectItem = {
       ...projectData,
       id: `proj-${Date.now()}`,
-      isVisible: true,
+      status: projectData.status || 'approved',
+      isVisible: projectData.isVisible !== undefined ? projectData.isVisible : true,
     };
     const updated = [newProj, ...projects];
     setProjects(updated);
@@ -835,6 +862,11 @@ export function usePortalStore() {
     if (isFirebaseConfigured) {
       saveProjectToFirestore(newProj).catch((e) => console.warn('Firestore project save note:', e));
     }
+    fetch('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newProj),
+    }).catch(() => {});
     return newProj;
   };
 
@@ -847,8 +879,15 @@ export function usePortalStore() {
     setProjects(updated);
     saveItem(STORAGE_KEYS.PROJECTS, updated);
     const target = updated.find((p) => p.id === id);
-    if (target && isFirebaseConfigured) {
-      saveProjectToFirestore(target).catch((e) => console.warn('Firestore project toggle note:', e));
+    if (target) {
+      if (isFirebaseConfigured) {
+        saveProjectToFirestore(target).catch((e) => console.warn('Firestore project toggle note:', e));
+      }
+      fetch('/api/projects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(target),
+      }).catch(() => {});
     }
   };
 
@@ -857,8 +896,15 @@ export function usePortalStore() {
     setProjects(updated);
     saveItem(STORAGE_KEYS.PROJECTS, updated);
     const target = updated.find((p) => p.id === id);
-    if (target && isFirebaseConfigured) {
-      saveProjectToFirestore(target).catch((e) => console.warn('Firestore project update note:', e));
+    if (target) {
+      if (isFirebaseConfigured) {
+        saveProjectToFirestore(target).catch((e) => console.warn('Firestore project update note:', e));
+      }
+      fetch('/api/projects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(target),
+      }).catch(() => {});
     }
   };
 
@@ -870,6 +916,7 @@ export function usePortalStore() {
     if (isFirebaseConfigured) {
       deleteProjectFromFirestore(id).catch((e) => console.warn('Firestore project delete note:', e));
     }
+    fetch(`/api/projects?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
   };
 
   const toggleNewsVisibility = (id: string) => {

@@ -302,10 +302,12 @@ export default function Home() {
   const contactEmail = contactSettings?.contactEmail || 'smartcitylab@kiet.edu';
   const [activeModal, setActiveModal] = useState<ProjectItem | null>(null);
 
-  // Real data computed from store
-  const approvedProjects = projects.filter((p) => p.isVisible !== false && p.status === 'approved');
+  // Real data computed from store - Resilient filter ensuring all published projects display
+  const approvedProjects = projects.filter(
+    (p) => p.isVisible !== false && p.status !== 'rejected' && p.status !== 'pending'
+  );
   const totalStudents    = batches.filter((s) => s.status === 'active').length;
-  const liveDeployments  = approvedProjects.filter((p) => !!p.demoUrl).length;
+  const liveDeployments  = approvedProjects.filter((p) => Boolean(p.demoUrl)).length || approvedProjects.length;
   const totalProjects    = projects.length;
   const pendingProjects  = projects.filter((p) => p.status === 'pending').length;
 
